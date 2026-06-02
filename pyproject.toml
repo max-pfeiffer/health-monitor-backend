@@ -1,0 +1,30 @@
+[project]
+name = "health-monitor-backend"
+version = "0.1.0"
+description = "Health metrics monitoring backend"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi[standard]>=0.115",
+    "sqlmodel>=0.0.21",
+    "alembic>=1.14",
+    "psycopg2-binary>=2.9",
+    "pydantic-settings>=2.6",
+    "matplotlib>=3.9",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "httpx>=0.27",
+    "ruff>=0.8",
+    "pre-commit>=3.5",
+]
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

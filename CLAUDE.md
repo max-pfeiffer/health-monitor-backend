@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Python backend service for health monitoring. The project is in early development — no application code exists yet.
+Python backend service for health monitoring.
 
 ### Purpose
 
@@ -52,6 +52,36 @@ SQLite is only used for testing purposes.
 
 ## Conventions
 
-Unit tests need to cover:
-- all api endpoints
+### Setup
+```
+uv sync                   # install all dependencies including dev
+uv sync --no-dev          # production dependencies only
+pre-commit install        # install git hooks
+```
+
+### Development
+```
+uv run uvicorn app.main:app --reload          # dev server at http://localhost:8000
+uv run alembic upgrade head                   # apply migrations
+uv run alembic revision --autogenerate -m ""  # generate migration from model changes
+```
+
+When adding a new SQLModel table model, import it in `alembic/env.py` so Alembic detects it during autogenerate.
+
+### Testing
+```
+uv run pytest                                      # run all tests
+uv run pytest tests/path/to/test.py::test_name    # run single test
+```
+
+Tests use SQLite (`test.db`) via conftest.py fixtures (`session`, `client`). Each test gets a fresh database — tables are created and dropped per test via the `setup_tables` autouse fixture.
+
+### Linting
+```
+uv run ruff check .    # lint
+uv run ruff format .   # format
+```
+
+### Unit tests need to cover
+- all API endpoints
 - database operations
