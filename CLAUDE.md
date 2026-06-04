@@ -34,6 +34,15 @@ The application will run 24/7.
 - Different types of databases need to be supported: SQLite, PostgreSQL
 - SQLite is only used for testing purposes. The SQLite database should not use a database file. It should be an in memory database.
 
+### Git Repository
+- The git repository for this project is hosted on GitHub: https://github.com/max-pfeiffer/health-monitor-backend
+- The default branch is main. This branch is protected.
+- Features need to be created on branches with feature/* pattern
+- Bug fixes need to be created on branches with bugfix/* pattern
+- Unit test should be run always using GitHub actions when a new merge request is created or updated
+- A new release on GitHub is created when the main branch is tagged with a semantic version
+- Release notes are generated automatically
+
 ## Architecture
 
 ### Project Structure
