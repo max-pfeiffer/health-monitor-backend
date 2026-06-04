@@ -11,7 +11,7 @@ Python backend service for health monitoring.
 The application should capture and store the following health metrics:
 - blood pressure
 - blood glucose
-- ketones
+- blood ketones
 
 It provides REST API endpoints for storing the health metrics data. 
 It also provides REST API endpoints which render diagrams for the health metrics as images.
@@ -30,9 +30,9 @@ The application will run 24/7.
 
 ### Expected Integrations
 
-Data is stored in a database.
-Different types of databases need to be supported: SQLite, PostgreSQL
-SQLite is only used for testing purposes.
+- Data is stored in a database.
+- Different types of databases need to be supported: SQLite, PostgreSQL
+- SQLite is only used for testing purposes. The SQLite database should not use a database file. It should be an in memory database.
 
 ## Architecture
 
@@ -51,6 +51,7 @@ SQLite is only used for testing purposes.
 ### Code Structure
 - Use Repository pattern for data CRUD operations
 - Data CRUD operations need to be atomic
+- Use SQLAlchemy context managers for database CRUD operations
 
 ### API Design
 - REST endpoints follow `/api/v1/<resource>` naming
@@ -58,8 +59,10 @@ SQLite is only used for testing purposes.
 
 ### Database
 - SQLModel models are the single source of truth for schema
+- Use type Decimal for numeric values with decimal places
 - All new models must be imported in `alembic/env.py`
 - PostgreSQL in production, SQLite in memory database in tests only
+
 
 ## Stack
 

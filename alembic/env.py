@@ -6,8 +6,7 @@ from sqlmodel import SQLModel
 
 from app.config import settings
 
-# Import all SQLModel table models here so Alembic can detect schema changes:
-# from app.models import some_model  # noqa: F401
+from app.models import BloodGlucose, BloodPressure, Ketones  # noqa: F401
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.database_url)
