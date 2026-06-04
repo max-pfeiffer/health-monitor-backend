@@ -112,3 +112,44 @@ def test_chart_time_range_filters_records(client: TestClient):
     )
     assert response.status_code == 200
     assert b"<svg" in response.content
+
+
+def test_import(client: TestClient):
+    payload = [
+        {"value": "5.60", "measured_at": "2024-01-10T08:00:00"},
+        {"value": "7.20", "notes": "after meal", "measured_at": "2024-01-11T12:00:00"},
+        {"value": "4.80", "measured_at": "2024-01-12T07:00:00"},
+    ]
+    response = client.post(BASE_URL + "/import", json=payload)
+    assert response.status_code == 201
+    data = response.json()
+    assert len(data) == 3
+    assert all(record["id"] is not None for record in data)
+    assert data[0]["value"] == "5.60"
+    assert data[1]["notes"] == "after meal"
+    assert data[2]["value"] == "4.80"
+
+
+def test_import_persists_to_db(client: TestClient):
+    payload = [
+        {"value": "5.60", "measured_at": "2024-02-01T08:00:00"},
+        {"value": "6.10", "measured_at": "2024-02-02T08:00:00"},
+    ]
+    client.post(BASE_URL + "/import", json=payload)
+    response = client.get(BASE_URL + "/")
+    assert len(response.json()) == 2
+
+
+def test_import_invalid_data(client: TestClient):
+    payload = [
+        {"value": "5.60", "measured_at": "2024-01-10T08:00:00"},
+        {"value": "not-a-number", "measured_at": "2024-01-11T08:00:00"},
+    ]
+    response = client.post(BASE_URL + "/import", json=payload)
+    assert response.status_code == 422
+
+
+def test_import_empty_list(client: TestClient):
+    response = client.post(BASE_URL + "/import", json=[])
+    assert response.status_code == 201
+    assert response.json() == []

@@ -129,3 +129,61 @@ def test_chart_time_range_filters_records(client: TestClient):
     )
     assert response.status_code == 200
     assert b"<svg" in response.content
+
+
+def test_import(client: TestClient):
+    payload = [
+        {
+            "systolic": 120,
+            "diastolic": 80,
+            "pulse": 72,
+            "measured_at": "2024-01-10T08:00:00",
+        },
+        {"systolic": 125, "diastolic": 82, "measured_at": "2024-01-11T08:00:00"},
+        {
+            "systolic": 118,
+            "diastolic": 78,
+            "pulse": 68,
+            "notes": "after rest",
+            "measured_at": "2024-01-12T08:00:00",
+        },
+    ]
+    response = client.post(BASE_URL + "/import", json=payload)
+    assert response.status_code == 201
+    data = response.json()
+    assert len(data) == 3
+    assert all(record["id"] is not None for record in data)
+    assert data[0]["systolic"] == 120
+    assert data[0]["diastolic"] == 80
+    assert data[0]["pulse"] == 72
+    assert data[1]["systolic"] == 125
+    assert data[2]["notes"] == "after rest"
+
+
+def test_import_persists_to_db(client: TestClient):
+    payload = [
+        {"systolic": 120, "diastolic": 80, "measured_at": "2024-02-01T09:00:00"},
+        {"systolic": 130, "diastolic": 85, "measured_at": "2024-02-02T09:00:00"},
+    ]
+    client.post(BASE_URL + "/import", json=payload)
+    response = client.get(BASE_URL + "/")
+    assert len(response.json()) == 2
+
+
+def test_import_invalid_data(client: TestClient):
+    payload = [
+        {"systolic": 120, "diastolic": 80, "measured_at": "2024-01-10T08:00:00"},
+        {
+            "systolic": "not-a-number",
+            "diastolic": 80,
+            "measured_at": "2024-01-11T08:00:00",
+        },
+    ]
+    response = client.post(BASE_URL + "/import", json=payload)
+    assert response.status_code == 422
+
+
+def test_import_empty_list(client: TestClient):
+    response = client.post(BASE_URL + "/import", json=[])
+    assert response.status_code == 201
+    assert response.json() == []

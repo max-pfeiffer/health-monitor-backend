@@ -75,7 +75,8 @@ The application will run 24/7.
 - The root endpoint of the application forwards to the API docs
 - REST endpoints follow `/api/v1/<resource>` naming
 - Diagram endpoints return SVG images via `StreamingResponse` 
-- Diagram endpoints should accept parameters for the time axis of the diagram. With parameters start and end time of the time axis can be specified.  
+- Diagram endpoints should accept parameters for the time axis of the diagram. With parameters start and end time of the time axis can be specified.
+- For each health metric an endpoint is created to import bulk data in JSON format. The import fails when any data fails validation.
 
 ### Database
 - SQLModel models are the single source of truth for schema

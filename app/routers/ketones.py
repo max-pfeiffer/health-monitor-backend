@@ -23,6 +23,11 @@ def create_ketones(data: KetonesCreate, session: Session = Depends(get_session))
     return KetonesRepository(session).create(data)
 
 
+@router.post("/import", response_model=list[KetonesRead], status_code=201)
+def import_ketones(data: list[KetonesCreate], session: Session = Depends(get_session)):
+    return KetonesRepository(session).bulk_create(data)
+
+
 @router.get("/chart", response_class=StreamingResponse)
 def ketones_chart(
     start: Optional[datetime] = None,
