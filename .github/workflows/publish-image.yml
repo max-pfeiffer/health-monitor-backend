@@ -9,8 +9,17 @@ jobs:
   publish:
     runs-on: ubuntu-24.04
     env:
-      IMAGE: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/health-monitor-backend
+      DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
+      DOCKER_HUB_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
     steps:
+      - name: Verify Docker Hub credentials are configured
+        run: |
+          if [ -z "$DOCKER_HUB_USERNAME" ] || [ -z "$DOCKER_HUB_TOKEN" ]; then
+            echo "::error::DOCKER_HUB_USERNAME and/or DOCKER_HUB_TOKEN repository secrets are not set."
+            echo "::error::Add them under Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+          echo "IMAGE=docker.io/${DOCKER_HUB_USERNAME}/health-monitor-backend" >> "$GITHUB_ENV"
       - name: Checkout Repository
         uses: actions/checkout@v6
       - name: Setup uv
@@ -20,7 +29,7 @@ jobs:
       - name: Create Virtual environment
         run: uv sync
       - name: Log in to Docker Hub
-        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | podman login docker.io -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+        run: echo "$DOCKER_HUB_TOKEN" | podman login docker.io -u "$DOCKER_HUB_USERNAME" --password-stdin
       - name: Build and push image
         run: |
           uv run python -m scripts.build \
