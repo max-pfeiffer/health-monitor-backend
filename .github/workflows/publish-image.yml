@@ -11,17 +11,16 @@ jobs:
     env:
       IMAGE: docker.io/${{ secrets.DOCKERHUB_USERNAME }}/health-monitor-backend
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: astral-sh/setup-uv@v5
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v7
         with:
           python-version: "3.12"
-
-      - run: uv sync
-
+      - name: Create Virtual environment
+        run: uv sync
       - name: Log in to Docker Hub
         run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | podman login docker.io -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
-
       - name: Build and push image
         run: |
           uv run python -m scripts.build \

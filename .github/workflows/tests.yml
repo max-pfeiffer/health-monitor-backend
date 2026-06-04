@@ -8,13 +8,25 @@ on:
 jobs:
   test:
     runs-on: ubuntu-24.04
+    env:
+      TESTCONTAINERS_RYUK_DISABLED: "true"
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: astral-sh/setup-uv@v5
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+      - name: Start Podman socket
+        run: |
+          sudo loginctl enable-linger "$USER"
+          systemctl --user enable --now podman.socket
+          echo "DOCKER_HOST=unix:///run/user/$(id -u)/podman/podman.sock" >> "$GITHUB_ENV"
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v7
         with:
           python-version: "3.12"
-
-      - run: uv sync
-
-      - run: uv run pytest
+      - name: Create Virtual environment
+        run: uv sync
+      - name: Run tests
+        run: uv run pytest
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
