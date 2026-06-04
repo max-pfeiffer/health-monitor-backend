@@ -31,8 +31,7 @@ The application will run 24/7.
 ### Expected Integrations
 
 - Data is stored in a database.
-- Different types of databases need to be supported: SQLite, PostgreSQL
-- SQLite is only used for testing purposes. The SQLite database should not use a database file. It should be an in memory database.
+- Different types of databases need to be supported: PostgreSQL
 
 ### Git Repository
 - The git repository for this project is hosted on GitHub: https://github.com/max-pfeiffer/health-monitor-backend
@@ -75,8 +74,13 @@ The application will run 24/7.
 - SQLModel models are the single source of truth for schema
 - Use type Decimal for numeric values with decimal places
 - All new models must be imported in `alembic/env.py`
-- PostgreSQL in production, SQLite in memory database in tests only
+- PostgreSQL, for unit tests testcontainers library is used to spin up the database
 
+### Container Image
+
+- The container image is build with Podman using a Python script. The script need to have a cli interface.
+- Building and running the container is tested with Python libraries
+- Use multiple stages in the containerfile to optimize image size 
 
 ## Stack
 
@@ -90,7 +94,10 @@ The application will run 24/7.
 - Test runner: pytest
 - Linter/formatter: Ruff
 - git pre-commit hooks: pre-commit
-- Container: Docker
+- Container: Podman
+- Container build: python-on-whales
+- Container test: testcontainers
+- CLI: click
 - Diagram rendering: Matplotlib
 
 
@@ -118,7 +125,7 @@ uv run pytest                                      # run all tests
 uv run pytest tests/path/to/test.py::test_name    # run single test
 ```
 
-Tests use an in-memory SQLite database via conftest.py fixtures (`session`, `client`). Each test gets a fresh database — tables are created and dropped per test via the `setup_tables` autouse fixture.
+Tests spin up a PostgreSQL database using testcontainers library via conftest.py fixtures (`session`, `client`). Each test gets a fresh database — tables are created and dropped per test via the `setup_tables` autouse fixture.
 
 ### Linting
 ```
