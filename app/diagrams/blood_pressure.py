@@ -23,7 +23,7 @@ def render_chart(
     fig = Figure(figsize=(12, 5))
     ax = fig.add_subplot(1, 1, 1)
 
-    sns.set_theme(style="darkgrid")
+    sns.set_theme(style="ticks")
 
     if records:
         rows = []
