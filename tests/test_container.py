@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 import requests
+from python_on_whales import DockerClient
 from sqlalchemy import create_engine
 from sqlmodel import SQLModel
 from testcontainers.core.container import DockerContainer
@@ -10,7 +11,7 @@ from testcontainers.core.network import Network
 from testcontainers.core.waiting_utils import wait_for_logs
 from testcontainers.postgres import PostgresContainer
 
-from scripts.build import build_image
+from scripts.build import build_image, push_image
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 IMAGE_TAG = "health-monitor-backend:test"
@@ -137,3 +138,29 @@ def test_blood_pressure_chart(app_container: str):
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("image/svg+xml")
     assert b"<svg" in response.content
+
+
+@pytest.fixture(scope="module")
+def registry():
+    container = DockerContainer("registry:2").with_exposed_ports(5000)
+    with container as reg:
+        wait_for_logs(reg, "listening on", timeout=30)
+        host = reg.get_container_host_ip()
+        port = reg.get_exposed_port(5000)
+        yield f"{host}:{port}"
+
+
+def test_push_image_to_registry(built_image: str, registry: str):
+    repo = "health-monitor-backend"
+    push_tag = f"{registry}/{repo}:push-test"
+
+    podman = DockerClient(client_call=["podman"])
+    podman.tag(built_image, push_tag)
+
+    push_image(push_tag, tls_verify=False)
+
+    response = requests.get(f"http://{registry}/v2/{repo}/tags/list", timeout=10)
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["name"] == repo
+    assert "push-test" in payload["tags"]

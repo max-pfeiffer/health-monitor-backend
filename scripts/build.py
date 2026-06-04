@@ -1,3 +1,4 @@
+import subprocess
 from pathlib import Path
 
 import click
@@ -7,9 +8,13 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CONTAINERFILE = PROJECT_ROOT / "Containerfile"
 
 
+def _client() -> DockerClient:
+    return DockerClient(client_call=["podman"])
+
+
 def build_image(tag: str, containerfile: Path, context: Path) -> str:
-    podman = DockerClient(client_call=["podman"])
-    podman.legacy_build(
+    """Build the image locally. Never pushes."""
+    _client().legacy_build(
         context_path=context,
         file=containerfile,
         tags=tag,
@@ -18,13 +23,29 @@ def build_image(tag: str, containerfile: Path, context: Path) -> str:
     return tag
 
 
+def push_image(tag: str, tls_verify: bool = True) -> None:
+    """Push a built image. Caller must `podman login` to the registry first.
+
+    `tls_verify=False` is intended for tests against a local plain-HTTP registry.
+    """
+    if tls_verify:
+        _client().push(tag)
+        return
+    subprocess.run(
+        ["podman", "push", "--tls-verify=false", tag],
+        check=True,
+    )
+
+
 @click.command()
 @click.option(
     "--tag",
     "-t",
-    default="health-monitor-backend:latest",
+    "tags",
+    multiple=True,
+    default=("health-monitor-backend:latest",),
     show_default=True,
-    help="Image tag to apply to the built image.",
+    help="Image tag(s) to apply. Repeat for multiple tags.",
 )
 @click.option(
     "--containerfile",
@@ -42,11 +63,24 @@ def build_image(tag: str, containerfile: Path, context: Path) -> str:
     show_default=True,
     help="Build context directory.",
 )
-def main(tag: str, containerfile: Path, context: Path) -> None:
+@click.option(
+    "--push/--no-push",
+    default=False,
+    show_default=True,
+    help="Push the image after building. Requires prior `podman login`.",
+)
+def main(tags: tuple[str, ...], containerfile: Path, context: Path, push: bool) -> None:
     """Build the health-monitor-backend container image with Podman."""
-    click.echo(f"Building {tag} from {containerfile} (context: {context})")
-    build_image(tag=tag, containerfile=containerfile, context=context)
-    click.echo(f"Built {tag}")
+    for tag in tags:
+        click.echo(f"Building {tag} from {containerfile} (context: {context})")
+        build_image(tag=tag, containerfile=containerfile, context=context)
+        click.echo(f"Built {tag}")
+
+    if push:
+        for tag in tags:
+            click.echo(f"Pushing {tag}")
+            push_image(tag)
+            click.echo(f"Pushed {tag}")
 
 
 if __name__ == "__main__":

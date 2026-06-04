@@ -41,6 +41,10 @@ The application will run 24/7.
 - Unit test should be run always using GitHub actions when a new merge request is created or updated
 - A new release on GitHub is created when the main branch is tagged with a semantic version
 - Release notes are generated automatically
+- When a new release is created using by tagging the main branch, the container image is build and pushed to Docker Hub
+- The image is then tagged with the release tag version and also with latest tag
+- In GitHub Actions environment variable DOCKER_HUB_USERNAME is used as Docker Hub username
+- In GitHub Actions environment variable DOCKER_HUB_TOKEN is used as Docker Hub password
 
 ## Architecture
 
@@ -80,7 +84,9 @@ The application will run 24/7.
 
 - The container image is build with Podman using a Python script. The script need to have a cli interface.
 - Building and running the container is tested with Python libraries
-- Use multiple stages in the containerfile to optimize image size 
+- Use multiple stages in the containerfile to optimize image size
+- The image is published on DockerHub: https://hub.docker.com/
+- 
 
 ## Stack
 
