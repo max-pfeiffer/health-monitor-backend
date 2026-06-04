@@ -14,6 +14,8 @@ def render_chart(
     records: list[BloodPressure],
     start: Optional[datetime] = None,
     end: Optional[datetime] = None,
+    systolic_top: int = 135,
+    diastolic_top: int = 85,
 ) -> BytesIO:
     fig = Figure(figsize=(12, 5))
     ax = fig.add_subplot(1, 1, 1)
@@ -42,6 +44,8 @@ def render_chart(
             ax=ax,
         )
 
+    ax.axhline(y=systolic_top, color="red", linewidth=1)
+    ax.axhline(y=diastolic_top, color="purple", linewidth=1)
     ax.set_title("Blood Pressure", fontsize=14, pad=12)
     ax.set_xlabel("Date")
     ax.set_ylabel("mmHg / BPM")

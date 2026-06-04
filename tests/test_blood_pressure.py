@@ -131,6 +131,18 @@ def test_chart_time_range_filters_records(client: TestClient):
     assert b"<svg" in response.content
 
 
+def test_chart_with_systolic_top(client: TestClient, record: dict):
+    response = client.get(f"{BASE_URL}/chart?systolic_top=135")
+    assert response.status_code == 200
+    assert b"<svg" in response.content
+
+
+def test_chart_with_diastolic_top(client: TestClient, record: dict):
+    response = client.get(f"{BASE_URL}/chart?diastolic_top=85")
+    assert response.status_code == 200
+    assert b"<svg" in response.content
+
+
 def test_import(client: TestClient):
     payload = [
         {

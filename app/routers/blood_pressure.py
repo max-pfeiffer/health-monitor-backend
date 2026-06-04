@@ -40,11 +40,20 @@ def import_blood_pressure(
 def blood_pressure_chart(
     start: Optional[datetime] = None,
     end: Optional[datetime] = None,
+    systolic_top: int = 135,
+    diastolic_top: int = 85,
     session: Session = Depends(get_session),
 ):
     records = BloodPressureRepository(session).get_in_range(start=start, end=end)
     return StreamingResponse(
-        render_chart(records, start=start, end=end), media_type="image/svg+xml"
+        render_chart(
+            records,
+            start=start,
+            end=end,
+            systolic_top=systolic_top,
+            diastolic_top=diastolic_top,
+        ),
+        media_type="image/svg+xml",
     )
 
 

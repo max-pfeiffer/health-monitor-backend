@@ -62,6 +62,35 @@ uv run ruff check .
 uv run ruff format .
 ```
 
+### Running with Podman Compose
+
+`compose.yaml` starts a PostgreSQL 17 database and the application container together. This is useful for running the full stack locally without a separate database setup.
+
+**Prerequisites:** [Podman](https://podman.io/) with the `podman-compose` plugin (or the standalone `podman compose` command).
+
+Build and start both services:
+
+```bash
+podman compose up --build
+```
+
+The app runs migrations automatically on startup. Once running:
+
+- API: `http://localhost:8000`
+- Interactive docs: `http://localhost:8000/docs`
+
+Stop and remove containers (data volume is preserved):
+
+```bash
+podman compose down
+```
+
+To also remove the persistent database volume:
+
+```bash
+podman compose down -v
+```
+
 ### Git pre-commit hooks
 
 The project uses [pre-commit](https://pre-commit.com/) to run Ruff lint and format checks on staged files before every commit. The hooks are defined in `.pre-commit-config.yaml` and enforced in CI by the **Code quality** workflow.

@@ -107,7 +107,7 @@ The application will run 24/7.
 - Container build: python-on-whales
 - Container test: testcontainers
 - CLI: click
-- Diagram rendering: Matplotlib
+- Diagram rendering: seaborn, matplotlib
 
 
 ## Conventions
