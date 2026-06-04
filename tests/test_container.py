@@ -4,14 +4,16 @@ from pathlib import Path
 import pytest
 import requests
 from python_on_whales import DockerClient
+from python_on_whales.utils import run as pow_run
 from sqlalchemy import create_engine
 from sqlmodel import SQLModel
 from testcontainers.core.container import DockerContainer
 from testcontainers.core.network import Network
 from testcontainers.core.waiting_utils import wait_for_logs
 from testcontainers.postgres import PostgresContainer
+from testcontainers.registry import DockerRegistryContainer
 
-from scripts.build import build_image, push_image
+from scripts.build import build_image
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 IMAGE_TAG = "health-monitor-backend:test"
@@ -142,12 +144,8 @@ def test_blood_pressure_chart(app_container: str):
 
 @pytest.fixture(scope="module")
 def registry():
-    container = DockerContainer("registry:2").with_exposed_ports(5000)
-    with container as reg:
-        wait_for_logs(reg, "listening on", timeout=30)
-        host = reg.get_container_host_ip()
-        port = reg.get_exposed_port(5000)
-        yield f"{host}:{port}"
+    with DockerRegistryContainer() as reg:
+        yield reg.get_registry()
 
 
 def test_push_image_to_registry(built_image: str, registry: str):
@@ -157,7 +155,11 @@ def test_push_image_to_registry(built_image: str, registry: str):
     podman = DockerClient(client_call=["podman"])
     podman.tag(built_image, push_tag)
 
-    push_image(push_tag, tls_verify=False)
+    # podman defaults to HTTPS when talking to a registry; the testcontainers
+    # registry:2 only speaks plain HTTP. python-on-whales' high-level push()
+    # doesn't expose --tls-verify, so build the command via its Command/run
+    # helpers — same library, lower-level entry point.
+    pow_run(podman.docker_cmd + ["push", "--tls-verify=false", push_tag])
 
     response = requests.get(f"http://{registry}/v2/{repo}/tags/list", timeout=10)
     assert response.status_code == 200

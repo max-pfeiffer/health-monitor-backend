@@ -1,4 +1,3 @@
-import subprocess
 from pathlib import Path
 
 import click
@@ -23,18 +22,9 @@ def build_image(tag: str, containerfile: Path, context: Path) -> str:
     return tag
 
 
-def push_image(tag: str, tls_verify: bool = True) -> None:
-    """Push a built image. Caller must `podman login` to the registry first.
-
-    `tls_verify=False` is intended for tests against a local plain-HTTP registry.
-    """
-    if tls_verify:
-        _client().push(tag)
-        return
-    subprocess.run(
-        ["podman", "push", "--tls-verify=false", tag],
-        check=True,
-    )
+def push_image(tag: str) -> None:
+    """Push a built image. Caller must `podman login` to the registry first."""
+    _client().push(tag)
 
 
 @click.command()

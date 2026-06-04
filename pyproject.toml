@@ -19,7 +19,7 @@ dev = [
     "httpx2>=0.28",
     "ruff>=0.8",
     "pre-commit>=3.5",
-    "testcontainers[postgres]>=4.8",
+    "testcontainers[postgres,registry]>=4.8",
     "python-on-whales>=0.74",
     "requests>=2.32",
 ]
