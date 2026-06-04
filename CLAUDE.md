@@ -90,7 +90,6 @@ The application will run 24/7.
 - Building and running the container is tested with Python libraries
 - Use multiple stages in the containerfile to optimize image size
 - The image is published on DockerHub: https://hub.docker.com/
-- 
 
 ## Stack
 
