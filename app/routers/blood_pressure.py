@@ -10,7 +10,7 @@ from app.diagrams.blood_pressure import render_chart
 from app.repositories.blood_pressure import BloodPressureRepository
 from app.schemas.blood_pressure import BloodPressureCreate, BloodPressureRead, BloodPressureUpdate
 
-router = APIRouter(prefix="/api/v1/blood-pressure", tags=["blood-pressure"])
+router = APIRouter(prefix="/blood-pressure", tags=["blood-pressure"])
 
 
 @router.get("/", response_model=list[BloodPressureRead])

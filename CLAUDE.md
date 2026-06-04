@@ -54,6 +54,7 @@ The application will run 24/7.
 - `app/schemas/` — Pydantic request/response schemas (one file per health metric)
 - `app/repositories/` — repository classes for atomic CRUD operations (one file per health metric)
 - `app/diagrams/` — Matplotlib SVG rendering functions (one file per health metric)
+- `app/routers/v1.py` — v1 API router (aggregates all metric routers under `/api/v1`)
 - `app/routers/` — FastAPI routers (one file per health metric)
 - `alembic/` — database migrations
 - `tests/` — pytest tests
@@ -64,6 +65,8 @@ The application will run 24/7.
 - Use SQLAlchemy context managers for database CRUD operations
 
 ### API Design
+- The API is versioned, we have a separate router for each API version
+- The root endpoint of the application forwards to the API docs
 - REST endpoints follow `/api/v1/<resource>` naming
 - Diagram endpoints return SVG images via `StreamingResponse` 
 - Diagram endpoints should accept parameters for the time axis of the diagram. With parameters start and end time of the time axis can be specified.  

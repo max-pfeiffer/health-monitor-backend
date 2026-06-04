@@ -10,7 +10,7 @@ from app.diagrams.ketones import render_chart
 from app.repositories.ketones import KetonesRepository
 from app.schemas.ketones import KetonesCreate, KetonesRead, KetonesUpdate
 
-router = APIRouter(prefix="/api/v1/ketones", tags=["ketones"])
+router = APIRouter(prefix="/ketones", tags=["ketones"])
 
 
 @router.get("/", response_model=list[KetonesRead])

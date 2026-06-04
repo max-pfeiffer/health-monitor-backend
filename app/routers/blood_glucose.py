@@ -10,7 +10,7 @@ from app.diagrams.blood_glucose import render_chart
 from app.repositories.blood_glucose import BloodGlucoseRepository
 from app.schemas.blood_glucose import BloodGlucoseCreate, BloodGlucoseRead, BloodGlucoseUpdate
 
-router = APIRouter(prefix="/api/v1/blood-glucose", tags=["blood-glucose"])
+router = APIRouter(prefix="/blood-glucose", tags=["blood-glucose"])
 
 
 @router.get("/", response_model=list[BloodGlucoseRead])
