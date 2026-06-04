@@ -133,9 +133,20 @@ def test_chart_time_range_filters_records(client: TestClient):
 
 def test_import(client: TestClient):
     payload = [
-        {"systolic": 120, "diastolic": 80, "pulse": 72, "measured_at": "2024-01-10T08:00:00"},
+        {
+            "systolic": 120,
+            "diastolic": 80,
+            "pulse": 72,
+            "measured_at": "2024-01-10T08:00:00",
+        },
         {"systolic": 125, "diastolic": 82, "measured_at": "2024-01-11T08:00:00"},
-        {"systolic": 118, "diastolic": 78, "pulse": 68, "notes": "after rest", "measured_at": "2024-01-12T08:00:00"},
+        {
+            "systolic": 118,
+            "diastolic": 78,
+            "pulse": 68,
+            "notes": "after rest",
+            "measured_at": "2024-01-12T08:00:00",
+        },
     ]
     response = client.post(BASE_URL + "/import", json=payload)
     assert response.status_code == 201
@@ -162,7 +173,11 @@ def test_import_persists_to_db(client: TestClient):
 def test_import_invalid_data(client: TestClient):
     payload = [
         {"systolic": 120, "diastolic": 80, "measured_at": "2024-01-10T08:00:00"},
-        {"systolic": "not-a-number", "diastolic": 80, "measured_at": "2024-01-11T08:00:00"},
+        {
+            "systolic": "not-a-number",
+            "diastolic": 80,
+            "measured_at": "2024-01-11T08:00:00",
+        },
     ]
     response = client.post(BASE_URL + "/import", json=payload)
     assert response.status_code == 422

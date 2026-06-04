@@ -41,9 +41,7 @@ class KetonesRepository:
         ids = [record.id for record in records]
         self.session.commit()
         return list(
-            self.session.exec(
-                select(Ketones).where(col(Ketones.id).in_(ids))
-            ).all()
+            self.session.exec(select(Ketones).where(col(Ketones.id).in_(ids))).all()
         )
 
     def update(self, record_id: int, data: KetonesUpdate) -> Optional[Ketones]:
