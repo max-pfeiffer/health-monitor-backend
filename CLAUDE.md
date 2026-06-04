@@ -34,6 +34,32 @@ Data is stored in a database.
 Different types of databases need to be supported: SQLite, PostgreSQL
 SQLite is only used for testing purposes.
 
+## Architecture
+
+### Project Structure
+- `app/` — main application package
+- `app/main.py` — FastAPI app entry point
+- `app/config.py` — settings via pydantic-settings (reads from `.env`)
+- `app/database.py` — SQLAlchemy engine, session factory, `get_session` dependency
+- `app/models/` — SQLModel table models (one file per health metric)
+- `app/schemas/` — Pydantic request/response schemas (one file per health metric)
+- `app/repositories/` — repository classes for atomic CRUD operations (one file per health metric)
+- `app/routers/` — FastAPI routers (one file per health metric)
+- `alembic/` — database migrations
+- `tests/` — pytest tests
+
+### Code Structure
+- Use Repository pattern for data CRUD operations
+- Data CRUD operations need to be atomic
+
+### API Design
+- REST endpoints follow `/api/v1/<resource>` naming
+- Diagram endpoints return PNG images via `StreamingResponse`
+
+### Database
+- SQLModel models are the single source of truth for schema
+- All new models must be imported in `alembic/env.py`
+- PostgreSQL in production, SQLite in memory database in tests only
 
 ## Stack
 
@@ -49,6 +75,7 @@ SQLite is only used for testing purposes.
 - git pre-commit hooks: pre-commit
 - Container: Docker
 - Diagram rendering: Matplotlib
+
 
 ## Conventions
 
@@ -74,7 +101,7 @@ uv run pytest                                      # run all tests
 uv run pytest tests/path/to/test.py::test_name    # run single test
 ```
 
-Tests use SQLite (`test.db`) via conftest.py fixtures (`session`, `client`). Each test gets a fresh database — tables are created and dropped per test via the `setup_tables` autouse fixture.
+Tests use an in-memory SQLite database via conftest.py fixtures (`session`, `client`). Each test gets a fresh database — tables are created and dropped per test via the `setup_tables` autouse fixture.
 
 ### Linting
 ```

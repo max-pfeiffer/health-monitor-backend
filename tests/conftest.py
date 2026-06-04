@@ -6,7 +6,7 @@ from sqlmodel import Session, SQLModel
 from app.database import get_session
 from app.main import app
 
-DATABASE_URL = "sqlite:///./test.db"
+DATABASE_URL = "sqlite://"
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 
 
