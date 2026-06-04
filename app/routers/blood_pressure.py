@@ -29,6 +29,13 @@ def create_blood_pressure(
     return BloodPressureRepository(session).create(data)
 
 
+@router.post("/import", response_model=list[BloodPressureRead], status_code=201)
+def import_blood_pressure(
+    data: list[BloodPressureCreate], session: Session = Depends(get_session)
+):
+    return BloodPressureRepository(session).bulk_create(data)
+
+
 @router.get("/chart", response_class=StreamingResponse)
 def blood_pressure_chart(
     start: Optional[datetime] = None,

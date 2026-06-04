@@ -29,6 +29,13 @@ def create_blood_glucose(
     return BloodGlucoseRepository(session).create(data)
 
 
+@router.post("/import", response_model=list[BloodGlucoseRead], status_code=201)
+def import_blood_glucose(
+    data: list[BloodGlucoseCreate], session: Session = Depends(get_session)
+):
+    return BloodGlucoseRepository(session).bulk_create(data)
+
+
 @router.get("/chart", response_class=StreamingResponse)
 def blood_glucose_chart(
     start: Optional[datetime] = None,

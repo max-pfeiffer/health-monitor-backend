@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from sqlmodel import Session, select
+from sqlmodel import Session, col, select
 
 from app.models.blood_pressure import BloodPressure
 from app.schemas.blood_pressure import BloodPressureCreate, BloodPressureUpdate
@@ -33,6 +33,18 @@ class BloodPressureRepository:
         if end is not None:
             query = query.where(BloodPressure.measured_at <= end)
         return list(self.session.exec(query).all())
+
+    def bulk_create(self, items: list[BloodPressureCreate]) -> list[BloodPressure]:
+        records = [BloodPressure(**item.model_dump()) for item in items]
+        self.session.add_all(records)
+        self.session.flush()
+        ids = [record.id for record in records]
+        self.session.commit()
+        return list(
+            self.session.exec(
+                select(BloodPressure).where(col(BloodPressure.id).in_(ids))
+            ).all()
+        )
 
     def update(
         self, record_id: int, data: BloodPressureUpdate
