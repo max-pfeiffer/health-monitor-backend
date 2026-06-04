@@ -34,7 +34,9 @@ class BloodGlucoseRepository:
             query = query.where(BloodGlucose.measured_at <= end)
         return list(self.session.exec(query).all())
 
-    def update(self, record_id: int, data: BloodGlucoseUpdate) -> Optional[BloodGlucose]:
+    def update(
+        self, record_id: int, data: BloodGlucoseUpdate
+    ) -> Optional[BloodGlucose]:
         record = self.session.get(BloodGlucose, record_id)
         if not record:
             return None

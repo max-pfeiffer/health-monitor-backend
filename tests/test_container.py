@@ -64,7 +64,9 @@ def app_container(built_image: str, network, postgres: PostgresContainer, schema
     user = postgres.username
     password = postgres.password
     dbname = postgres.dbname
-    internal_url = f"postgresql+psycopg2://{user}:{password}@{POSTGRES_ALIAS}:5432/{dbname}"
+    internal_url = (
+        f"postgresql+psycopg2://{user}:{password}@{POSTGRES_ALIAS}:5432/{dbname}"
+    )
 
     host_port = _free_port()
     container = (

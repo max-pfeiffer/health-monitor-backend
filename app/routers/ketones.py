@@ -30,7 +30,9 @@ def ketones_chart(
     session: Session = Depends(get_session),
 ):
     records = KetonesRepository(session).get_in_range(start=start, end=end)
-    return StreamingResponse(render_chart(records, start=start, end=end), media_type="image/svg+xml")
+    return StreamingResponse(
+        render_chart(records, start=start, end=end), media_type="image/svg+xml"
+    )
 
 
 @router.get("/{record_id}", response_model=KetonesRead)
@@ -42,7 +44,9 @@ def get_ketones(record_id: int, session: Session = Depends(get_session)):
 
 
 @router.put("/{record_id}", response_model=KetonesRead)
-def update_ketones(record_id: int, data: KetonesUpdate, session: Session = Depends(get_session)):
+def update_ketones(
+    record_id: int, data: KetonesUpdate, session: Session = Depends(get_session)
+):
     record = KetonesRepository(session).update(record_id, data)
     if not record:
         raise HTTPException(status_code=404, detail="Record not found")
