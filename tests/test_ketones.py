@@ -71,3 +71,31 @@ def test_delete(client: TestClient, record: dict):
 def test_delete_not_found(client: TestClient):
     response = client.delete(f"{BASE_URL}/999")
     assert response.status_code == 404
+
+
+def test_chart_empty(client: TestClient):
+    response = client.get(f"{BASE_URL}/chart")
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("image/svg+xml")
+    assert b"<svg" in response.content
+
+
+def test_chart_with_data(client: TestClient, record: dict):
+    response = client.get(f"{BASE_URL}/chart")
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("image/svg+xml")
+    assert b"<svg" in response.content
+
+
+def test_chart_with_time_range(client: TestClient, record: dict):
+    response = client.get(f"{BASE_URL}/chart?start=2024-01-01T00:00:00&end=2024-12-31T23:59:59")
+    assert response.status_code == 200
+    assert b"<svg" in response.content
+
+
+def test_chart_time_range_filters_records(client: TestClient):
+    client.post(BASE_URL + "/", json={"value": "0.50", "measured_at": "2024-03-01T10:00:00"})
+    client.post(BASE_URL + "/", json={"value": "0.80", "measured_at": "2024-06-01T10:00:00"})
+    response = client.get(f"{BASE_URL}/chart?start=2024-04-01T00:00:00&end=2024-12-31T23:59:59")
+    assert response.status_code == 200
+    assert b"<svg" in response.content
