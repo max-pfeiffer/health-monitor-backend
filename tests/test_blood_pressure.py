@@ -7,12 +7,18 @@ MEASURED_AT = "2024-01-15T10:00:00"
 
 @pytest.fixture
 def record(client: TestClient) -> dict:
-    response = client.post(BASE_URL + "/", json={"systolic": 120, "diastolic": 80, "measured_at": MEASURED_AT})
+    response = client.post(
+        BASE_URL + "/",
+        json={"systolic": 120, "diastolic": 80, "measured_at": MEASURED_AT},
+    )
     return response.json()
 
 
 def test_create(client: TestClient):
-    response = client.post(BASE_URL + "/", json={"systolic": 120, "diastolic": 80, "measured_at": MEASURED_AT})
+    response = client.post(
+        BASE_URL + "/",
+        json={"systolic": 120, "diastolic": 80, "measured_at": MEASURED_AT},
+    )
     assert response.status_code == 201
     data = response.json()
     assert data["systolic"] == 120
@@ -23,7 +29,13 @@ def test_create(client: TestClient):
 def test_create_with_optional_fields(client: TestClient):
     response = client.post(
         BASE_URL + "/",
-        json={"systolic": 120, "diastolic": 80, "pulse": 72, "notes": "after rest", "measured_at": MEASURED_AT},
+        json={
+            "systolic": 120,
+            "diastolic": 80,
+            "pulse": 72,
+            "notes": "after rest",
+            "measured_at": MEASURED_AT,
+        },
     )
     assert response.status_code == 201
     data = response.json()
@@ -38,7 +50,10 @@ def test_list_empty(client: TestClient):
 
 
 def test_list(client: TestClient, record: dict):
-    client.post(BASE_URL + "/", json={"systolic": 130, "diastolic": 85, "measured_at": MEASURED_AT})
+    client.post(
+        BASE_URL + "/",
+        json={"systolic": 130, "diastolic": 85, "measured_at": MEASURED_AT},
+    )
     response = client.get(BASE_URL + "/")
     assert response.status_code == 200
     assert len(response.json()) == 2
@@ -93,14 +108,24 @@ def test_chart_with_data(client: TestClient, record: dict):
 
 
 def test_chart_with_time_range(client: TestClient, record: dict):
-    response = client.get(f"{BASE_URL}/chart?start=2024-01-01T00:00:00&end=2024-12-31T23:59:59")
+    response = client.get(
+        f"{BASE_URL}/chart?start=2024-01-01T00:00:00&end=2024-12-31T23:59:59"
+    )
     assert response.status_code == 200
     assert b"<svg" in response.content
 
 
 def test_chart_time_range_filters_records(client: TestClient):
-    client.post(BASE_URL + "/", json={"systolic": 120, "diastolic": 80, "measured_at": "2024-03-01T10:00:00"})
-    client.post(BASE_URL + "/", json={"systolic": 130, "diastolic": 85, "measured_at": "2024-06-01T10:00:00"})
-    response = client.get(f"{BASE_URL}/chart?start=2024-04-01T00:00:00&end=2024-12-31T23:59:59")
+    client.post(
+        BASE_URL + "/",
+        json={"systolic": 120, "diastolic": 80, "measured_at": "2024-03-01T10:00:00"},
+    )
+    client.post(
+        BASE_URL + "/",
+        json={"systolic": 130, "diastolic": 85, "measured_at": "2024-06-01T10:00:00"},
+    )
+    response = client.get(
+        f"{BASE_URL}/chart?start=2024-04-01T00:00:00&end=2024-12-31T23:59:59"
+    )
     assert response.status_code == 200
     assert b"<svg" in response.content

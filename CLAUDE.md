@@ -38,9 +38,16 @@ The application will run 24/7.
 - The default branch is main. This branch is protected.
 - Features need to be created on branches with feature/* pattern
 - Bug fixes need to be created on branches with bugfix/* pattern
+
+#### GitHub Workflows
+- Git pre-commit hooks are run using GitHub actions when a new merge request is created or updated
 - Unit test should be run always using GitHub actions when a new merge request is created or updated
 - A new release on GitHub is created when the main branch is tagged with a semantic version
 - Release notes are generated automatically
+- When a new release is created using by tagging the main branch, the container image is build and pushed to Docker Hub
+- The image is then tagged with the release tag version and also with latest tag
+- In GitHub Actions environment variable DOCKER_HUB_USERNAME is used as Docker Hub username
+- In GitHub Actions environment variable DOCKER_HUB_TOKEN is used as Docker Hub password
 
 ## Architecture
 
@@ -80,7 +87,9 @@ The application will run 24/7.
 
 - The container image is build with Podman using a Python script. The script need to have a cli interface.
 - Building and running the container is tested with Python libraries
-- Use multiple stages in the containerfile to optimize image size 
+- Use multiple stages in the containerfile to optimize image size
+- The image is published on DockerHub: https://hub.docker.com/
+- 
 
 ## Stack
 
@@ -104,10 +113,11 @@ The application will run 24/7.
 ## Conventions
 
 ### Setup
+Development setup needs both the main and the dev dependencies. Production setup needs only the main dependencies (no pytest, ruff, pre-commit, testcontainers, etc.).
 ```
-uv sync                   # install all dependencies including dev
-uv sync --no-dev          # production dependencies only
-pre-commit install        # install git hooks
+uv sync                       # development: main + dev dependencies
+uv sync --no-dev              # production: main dependencies only
+uv run pre-commit install     # development only: install git pre-commit hooks
 ```
 
 ### Development
@@ -131,6 +141,14 @@ Tests spin up a PostgreSQL database using testcontainers library via conftest.py
 ```
 uv run ruff check .    # lint
 uv run ruff format .   # format
+```
+
+### Git pre-commit hooks
+Hooks are defined in `.pre-commit-config.yaml` and enforced in CI by the `Code quality` workflow. They run Ruff lint and format on staged files before every commit.
+```
+uv run pre-commit install              # install hooks once after cloning
+uv run pre-commit run --all-files      # run all hooks against the whole repo
+uv run pre-commit autoupdate           # update hook versions
 ```
 
 ### Unit tests need to cover

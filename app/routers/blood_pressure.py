@@ -8,7 +8,11 @@ from sqlmodel import Session
 from app.database import get_session
 from app.diagrams.blood_pressure import render_chart
 from app.repositories.blood_pressure import BloodPressureRepository
-from app.schemas.blood_pressure import BloodPressureCreate, BloodPressureRead, BloodPressureUpdate
+from app.schemas.blood_pressure import (
+    BloodPressureCreate,
+    BloodPressureRead,
+    BloodPressureUpdate,
+)
 
 router = APIRouter(prefix="/blood-pressure", tags=["blood-pressure"])
 
@@ -19,7 +23,9 @@ def list_blood_pressure(session: Session = Depends(get_session)):
 
 
 @router.post("/", response_model=BloodPressureRead, status_code=201)
-def create_blood_pressure(data: BloodPressureCreate, session: Session = Depends(get_session)):
+def create_blood_pressure(
+    data: BloodPressureCreate, session: Session = Depends(get_session)
+):
     return BloodPressureRepository(session).create(data)
 
 
@@ -30,7 +36,9 @@ def blood_pressure_chart(
     session: Session = Depends(get_session),
 ):
     records = BloodPressureRepository(session).get_in_range(start=start, end=end)
-    return StreamingResponse(render_chart(records, start=start, end=end), media_type="image/svg+xml")
+    return StreamingResponse(
+        render_chart(records, start=start, end=end), media_type="image/svg+xml"
+    )
 
 
 @router.get("/{record_id}", response_model=BloodPressureRead)
@@ -42,7 +50,9 @@ def get_blood_pressure(record_id: int, session: Session = Depends(get_session)):
 
 
 @router.put("/{record_id}", response_model=BloodPressureRead)
-def update_blood_pressure(record_id: int, data: BloodPressureUpdate, session: Session = Depends(get_session)):
+def update_blood_pressure(
+    record_id: int, data: BloodPressureUpdate, session: Session = Depends(get_session)
+):
     record = BloodPressureRepository(session).update(record_id, data)
     if not record:
         raise HTTPException(status_code=404, detail="Record not found")

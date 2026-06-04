@@ -34,7 +34,9 @@ class BloodPressureRepository:
             query = query.where(BloodPressure.measured_at <= end)
         return list(self.session.exec(query).all())
 
-    def update(self, record_id: int, data: BloodPressureUpdate) -> Optional[BloodPressure]:
+    def update(
+        self, record_id: int, data: BloodPressureUpdate
+    ) -> Optional[BloodPressure]:
         record = self.session.get(BloodPressure, record_id)
         if not record:
             return None
