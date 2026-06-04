@@ -143,6 +143,24 @@ def test_chart_with_diastolic_top(client: TestClient, record: dict):
     assert b"<svg" in response.content
 
 
+def test_chart_hide_systolic(client: TestClient, record: dict):
+    response = client.get(f"{BASE_URL}/chart?show_systolic=false")
+    assert response.status_code == 200
+    assert b"<svg" in response.content
+
+
+def test_chart_hide_diastolic(client: TestClient, record: dict):
+    response = client.get(f"{BASE_URL}/chart?show_diastolic=false")
+    assert response.status_code == 200
+    assert b"<svg" in response.content
+
+
+def test_chart_hide_pulse(client: TestClient, record: dict):
+    response = client.get(f"{BASE_URL}/chart?show_pulse=false")
+    assert response.status_code == 200
+    assert b"<svg" in response.content
+
+
 def test_import(client: TestClient):
     payload = [
         {

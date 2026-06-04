@@ -12,10 +12,13 @@ from app.models.blood_pressure import BloodPressure
 
 def render_chart(
     records: list[BloodPressure],
-    start: Optional[datetime] = None,
-    end: Optional[datetime] = None,
-    systolic_top: int = 135,
-    diastolic_top: int = 85,
+    start: Optional[datetime],
+    end: Optional[datetime],
+    systolic_top: int,
+    diastolic_top: int,
+    show_systolic: bool,
+    show_diastolic: bool,
+    show_pulse: bool,
 ) -> BytesIO:
     fig = Figure(figsize=(12, 5))
     ax = fig.add_subplot(1, 1, 1)
@@ -26,26 +29,33 @@ def render_chart(
         rows = []
         for r in records:
             ts = r.measured_at
-            rows.append({"measured_at": ts, "value": r.systolic, "metric": "Systolic"})
-            rows.append(
-                {"measured_at": ts, "value": r.diastolic, "metric": "Diastolic"}
-            )
-            if r.pulse is not None:
+            if show_systolic:
+                rows.append(
+                    {"measured_at": ts, "value": r.systolic, "metric": "Systolic"}
+                )
+            if show_diastolic:
+                rows.append(
+                    {"measured_at": ts, "value": r.diastolic, "metric": "Diastolic"}
+                )
+            if show_pulse and r.pulse is not None:
                 rows.append({"measured_at": ts, "value": r.pulse, "metric": "Pulse"})
 
-        df = pd.DataFrame(rows)
-        sns.lineplot(
-            data=df,
-            x="measured_at",
-            y="value",
-            hue="metric",
-            marker="o",
-            markersize=4,
-            ax=ax,
-        )
+        if rows:
+            df = pd.DataFrame(rows)
+            sns.lineplot(
+                data=df,
+                x="measured_at",
+                y="value",
+                hue="metric",
+                marker="o",
+                markersize=4,
+                ax=ax,
+            )
 
-    ax.axhline(y=systolic_top, color="red", linewidth=1)
-    ax.axhline(y=diastolic_top, color="purple", linewidth=1)
+    if show_systolic:
+        ax.axhline(y=systolic_top, color="red", linewidth=1)
+    if show_diastolic:
+        ax.axhline(y=diastolic_top, color="purple", linewidth=1)
     ax.set_title("Blood Pressure", fontsize=14, pad=12)
     ax.set_xlabel("Date")
     ax.set_ylabel("mmHg / BPM")
