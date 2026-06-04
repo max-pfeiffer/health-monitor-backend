@@ -3,6 +3,8 @@ from io import BytesIO
 from typing import Optional
 
 import matplotlib.dates as mdates
+import pandas as pd
+import seaborn as sns
 from matplotlib.figure import Figure
 
 from app.models.blood_pressure import BloodPressure
@@ -13,29 +15,46 @@ def render_chart(
     start: Optional[datetime] = None,
     end: Optional[datetime] = None,
 ) -> BytesIO:
-    fig = Figure(figsize=(10, 4))
+    fig = Figure(figsize=(12, 5))
     ax = fig.add_subplot(1, 1, 1)
 
+    sns.set_theme(style="darkgrid")
+
     if records:
-        dates = [r.measured_at for r in records]
-        ax.plot(dates, [r.systolic for r in records], marker="o", label="Systolic")
-        ax.plot(dates, [r.diastolic for r in records], marker="o", label="Diastolic")
-        ax.legend()
-        fig.autofmt_xdate()
+        rows = []
+        for r in records:
+            ts = r.measured_at
+            rows.append({"measured_at": ts, "value": r.systolic, "metric": "Systolic"})
+            rows.append(
+                {"measured_at": ts, "value": r.diastolic, "metric": "Diastolic"}
+            )
+            if r.pulse is not None:
+                rows.append({"measured_at": ts, "value": r.pulse, "metric": "Pulse"})
 
-    ax.set_title("Blood Pressure")
+        df = pd.DataFrame(rows)
+        sns.lineplot(
+            data=df,
+            x="measured_at",
+            y="value",
+            hue="metric",
+            marker="o",
+            markersize=4,
+            ax=ax,
+        )
+
+    ax.set_title("Blood Pressure", fontsize=14, pad=12)
     ax.set_xlabel("Date")
-    ax.set_ylabel("mmHg")
+    ax.set_ylabel("mmHg / BPM")
 
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m-%d"))
     if start is not None or end is not None:
-        ax.xaxis.set_major_formatter(mdates.AutoDateFormatter(mdates.AutoDateLocator()))
         xlim = list(ax.get_xlim())
         if start is not None:
             xlim[0] = mdates.date2num(start)
         if end is not None:
             xlim[1] = mdates.date2num(end)
         ax.set_xlim(xlim)
-        fig.autofmt_xdate()
+    fig.autofmt_xdate()
 
     buf = BytesIO()
     fig.savefig(buf, format="svg", bbox_inches="tight")
