@@ -44,6 +44,7 @@ The application will run 24/7.
 - `app/models/` — SQLModel table models (one file per health metric)
 - `app/schemas/` — Pydantic request/response schemas (one file per health metric)
 - `app/repositories/` — repository classes for atomic CRUD operations (one file per health metric)
+- `app/diagrams/` — Matplotlib SVG rendering functions (one file per health metric)
 - `app/routers/` — FastAPI routers (one file per health metric)
 - `alembic/` — database migrations
 - `tests/` — pytest tests
@@ -55,7 +56,8 @@ The application will run 24/7.
 
 ### API Design
 - REST endpoints follow `/api/v1/<resource>` naming
-- Diagram endpoints return PNG images via `StreamingResponse`
+- Diagram endpoints return SVG images via `StreamingResponse` 
+- Diagram endpoints should accept parameters for the time axis of the diagram. With parameters start and end time of the time axis can be specified.  
 
 ### Database
 - SQLModel models are the single source of truth for schema

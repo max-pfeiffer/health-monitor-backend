@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional
 
 from sqlmodel import Session, select
@@ -22,6 +23,16 @@ class BloodPressureRepository:
 
     def get_all(self) -> list[BloodPressure]:
         return list(self.session.exec(select(BloodPressure)).all())
+
+    def get_in_range(
+        self, start: Optional[datetime] = None, end: Optional[datetime] = None
+    ) -> list[BloodPressure]:
+        query = select(BloodPressure).order_by(BloodPressure.measured_at)
+        if start is not None:
+            query = query.where(BloodPressure.measured_at >= start)
+        if end is not None:
+            query = query.where(BloodPressure.measured_at <= end)
+        return list(self.session.exec(query).all())
 
     def update(self, record_id: int, data: BloodPressureUpdate) -> Optional[BloodPressure]:
         record = self.session.get(BloodPressure, record_id)

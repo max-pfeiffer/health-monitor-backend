@@ -1,7 +1,12 @@
+from datetime import datetime
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from sqlmodel import Session
 
 from app.database import get_session
+from app.diagrams.ketones import render_chart
 from app.repositories.ketones import KetonesRepository
 from app.schemas.ketones import KetonesCreate, KetonesRead, KetonesUpdate
 
@@ -16,6 +21,16 @@ def list_ketones(session: Session = Depends(get_session)):
 @router.post("/", response_model=KetonesRead, status_code=201)
 def create_ketones(data: KetonesCreate, session: Session = Depends(get_session)):
     return KetonesRepository(session).create(data)
+
+
+@router.get("/chart", response_class=StreamingResponse)
+def ketones_chart(
+    start: Optional[datetime] = None,
+    end: Optional[datetime] = None,
+    session: Session = Depends(get_session),
+):
+    records = KetonesRepository(session).get_in_range(start=start, end=end)
+    return StreamingResponse(render_chart(records, start=start, end=end), media_type="image/svg+xml")
 
 
 @router.get("/{record_id}", response_model=KetonesRead)

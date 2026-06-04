@@ -1,7 +1,12 @@
+from datetime import datetime
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from sqlmodel import Session
 
 from app.database import get_session
+from app.diagrams.blood_glucose import render_chart
 from app.repositories.blood_glucose import BloodGlucoseRepository
 from app.schemas.blood_glucose import BloodGlucoseCreate, BloodGlucoseRead, BloodGlucoseUpdate
 
@@ -16,6 +21,16 @@ def list_blood_glucose(session: Session = Depends(get_session)):
 @router.post("/", response_model=BloodGlucoseRead, status_code=201)
 def create_blood_glucose(data: BloodGlucoseCreate, session: Session = Depends(get_session)):
     return BloodGlucoseRepository(session).create(data)
+
+
+@router.get("/chart", response_class=StreamingResponse)
+def blood_glucose_chart(
+    start: Optional[datetime] = None,
+    end: Optional[datetime] = None,
+    session: Session = Depends(get_session),
+):
+    records = BloodGlucoseRepository(session).get_in_range(start=start, end=end)
+    return StreamingResponse(render_chart(records, start=start, end=end), media_type="image/svg+xml")
 
 
 @router.get("/{record_id}", response_model=BloodGlucoseRead)

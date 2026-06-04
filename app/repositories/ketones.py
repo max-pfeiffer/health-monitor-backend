@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional
 
 from sqlmodel import Session, select
@@ -22,6 +23,16 @@ class KetonesRepository:
 
     def get_all(self) -> list[Ketones]:
         return list(self.session.exec(select(Ketones)).all())
+
+    def get_in_range(
+        self, start: Optional[datetime] = None, end: Optional[datetime] = None
+    ) -> list[Ketones]:
+        query = select(Ketones).order_by(Ketones.measured_at)
+        if start is not None:
+            query = query.where(Ketones.measured_at >= start)
+        if end is not None:
+            query = query.where(Ketones.measured_at <= end)
+        return list(self.session.exec(query).all())
 
     def update(self, record_id: int, data: KetonesUpdate) -> Optional[Ketones]:
         record = self.session.get(Ketones, record_id)

@@ -1,7 +1,12 @@
+from datetime import datetime
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from sqlmodel import Session
 
 from app.database import get_session
+from app.diagrams.blood_pressure import render_chart
 from app.repositories.blood_pressure import BloodPressureRepository
 from app.schemas.blood_pressure import BloodPressureCreate, BloodPressureRead, BloodPressureUpdate
 
@@ -16,6 +21,16 @@ def list_blood_pressure(session: Session = Depends(get_session)):
 @router.post("/", response_model=BloodPressureRead, status_code=201)
 def create_blood_pressure(data: BloodPressureCreate, session: Session = Depends(get_session)):
     return BloodPressureRepository(session).create(data)
+
+
+@router.get("/chart", response_class=StreamingResponse)
+def blood_pressure_chart(
+    start: Optional[datetime] = None,
+    end: Optional[datetime] = None,
+    session: Session = Depends(get_session),
+):
+    records = BloodPressureRepository(session).get_in_range(start=start, end=end)
+    return StreamingResponse(render_chart(records, start=start, end=end), media_type="image/svg+xml")
 
 
 @router.get("/{record_id}", response_model=BloodPressureRead)
