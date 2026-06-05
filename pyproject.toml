@@ -1,8 +1,8 @@
 [project]
 name = "health-monitor-backend"
-version = "0.3.0"
+version = "0.4.0"
 description = "Health metrics monitoring backend"
-requires-python = ">=3.12"
+requires-python = ">=3.14"
 dependencies = [
     "fastapi[standard]>=0.115",
     "sqlmodel>=0.0.21",

@@ -2,21 +2,21 @@
 
 case ${1} in
   health-monitor-backend)
-    cd "$PYTHONPATH" || return 100
-    uvicorn app.main:app --host 0.0.0.0 --port 8000 || return $?
+    cd "$PYTHONPATH" || exit 100
+    uvicorn app.main:app --host 0.0.0.0 --port 8000 || exit $?
     ;;
 
   database-migrations)
-    cd "$PYTHONPATH" || return 100
+    cd "$PYTHONPATH" || exit 100
     if [ "$DATABASE_ALEMBIC_MIGRATION_ROLLBACK" = "true" ]; then
-      alembic downgrade "$DATABASE_ALEMBIC_MIGRATION_REVISION" || return $?
+      alembic downgrade "$DATABASE_ALEMBIC_MIGRATION_REVISION" || exit $?
     else
-      alembic upgrade head || return $?
-      alembic check || return $?
+      alembic upgrade head || exit $?
+      alembic check || exit $?
     fi
     ;;
 
   *)
-    return 104
+    exit 104
     ;;
 esac
