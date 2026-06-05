@@ -11,5 +11,5 @@ class BloodPressure(SQLModel, table=True):
     systolic: int
     diastolic: int
     pulse: Optional[int] = None
-    measured_at: datetime
+    measured_at: datetime = Field(unique=True, index=True)
     notes: Optional[str] = None

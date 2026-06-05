@@ -1,13 +1,16 @@
+import json
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile
 from fastapi.responses import StreamingResponse
+from pydantic import TypeAdapter, ValidationError
 from sqlmodel import Session
 
 from app.database import get_session
 from app.diagrams.blood_pressure import render_chart
 from app.repositories.blood_pressure import BloodPressureRepository
+from app.repositories.exceptions import DuplicateMeasurementError
 from app.schemas.blood_pressure import (
     BloodPressureCreate,
     BloodPressureRead,
@@ -26,14 +29,31 @@ def list_blood_pressure(session: Session = Depends(get_session)):
 def create_blood_pressure(
     data: BloodPressureCreate, session: Session = Depends(get_session)
 ):
-    return BloodPressureRepository(session).create(data)
+    try:
+        return BloodPressureRepository(session).create(data)
+    except DuplicateMeasurementError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
 
 
-@router.post("/import", response_model=list[BloodPressureRead], status_code=201)
-def import_blood_pressure(
-    data: list[BloodPressureCreate], session: Session = Depends(get_session)
+@router.post("/import", status_code=201)
+async def import_blood_pressure(
+    file: UploadFile = File(...),
+    session: Session = Depends(get_session),
 ):
-    return BloodPressureRepository(session).bulk_create(data)
+    content = await file.read()
+    try:
+        payload = json.loads(content)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=422, detail=f"Invalid JSON: {exc}")
+    try:
+        items = TypeAdapter(list[BloodPressureCreate]).validate_python(payload)
+    except ValidationError as exc:
+        raise HTTPException(status_code=422, detail=exc.errors())
+    try:
+        BloodPressureRepository(session).bulk_create(items)
+    except DuplicateMeasurementError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+    return Response(status_code=201)
 
 
 @router.get("/chart", response_class=StreamingResponse)
@@ -75,7 +95,10 @@ def get_blood_pressure(record_id: int, session: Session = Depends(get_session)):
 def update_blood_pressure(
     record_id: int, data: BloodPressureUpdate, session: Session = Depends(get_session)
 ):
-    record = BloodPressureRepository(session).update(record_id, data)
+    try:
+        record = BloodPressureRepository(session).update(record_id, data)
+    except DuplicateMeasurementError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
     if not record:
         raise HTTPException(status_code=404, detail="Record not found")
     return record
