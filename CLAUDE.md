@@ -154,3 +154,5 @@ uv run pre-commit autoupdate           # update hook versions
 ### Unit tests need to cover
 - all API endpoints
 - database operations
+- generating diagrams
+- repositories
