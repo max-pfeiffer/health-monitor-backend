@@ -1,8 +1,10 @@
+import json
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile
 from fastapi.responses import StreamingResponse
+from pydantic import TypeAdapter, ValidationError
 from sqlmodel import Session
 
 from app.database import get_session
@@ -23,9 +25,22 @@ def create_ketones(data: KetonesCreate, session: Session = Depends(get_session))
     return KetonesRepository(session).create(data)
 
 
-@router.post("/import", response_model=list[KetonesRead], status_code=201)
-def import_ketones(data: list[KetonesCreate], session: Session = Depends(get_session)):
-    return KetonesRepository(session).bulk_create(data)
+@router.post("/import", status_code=201)
+async def import_ketones(
+    file: UploadFile = File(...),
+    session: Session = Depends(get_session),
+):
+    content = await file.read()
+    try:
+        payload = json.loads(content)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=422, detail=f"Invalid JSON: {exc}")
+    try:
+        items = TypeAdapter(list[KetonesCreate]).validate_python(payload)
+    except ValidationError as exc:
+        raise HTTPException(status_code=422, detail=exc.errors())
+    KetonesRepository(session).bulk_create(items)
+    return Response(status_code=201)
 
 
 @router.get("/chart", response_class=StreamingResponse)

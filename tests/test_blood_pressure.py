@@ -1,8 +1,14 @@
+import json
+
 import pytest
 from fastapi.testclient import TestClient
 
 BASE_URL = "/api/v1/blood-pressure"
 MEASURED_AT = "2024-01-15T10:00:00"
+
+
+def _json_file(payload) -> dict:
+    return {"file": ("data.json", json.dumps(payload), "application/json")}
 
 
 @pytest.fixture
@@ -178,16 +184,15 @@ def test_import(client: TestClient):
             "measured_at": "2024-01-12T08:00:00",
         },
     ]
-    response = client.post(BASE_URL + "/import", json=payload)
+    response = client.post(BASE_URL + "/import", files=_json_file(payload))
     assert response.status_code == 201
-    data = response.json()
-    assert len(data) == 3
-    assert all(record["id"] is not None for record in data)
-    assert data[0]["systolic"] == 120
-    assert data[0]["diastolic"] == 80
-    assert data[0]["pulse"] == 72
-    assert data[1]["systolic"] == 125
-    assert data[2]["notes"] == "after rest"
+    assert response.content == b""
+
+    listed = client.get(BASE_URL + "/").json()
+    assert len(listed) == 3
+    by_systolic = {record["systolic"]: record for record in listed}
+    assert by_systolic[120]["pulse"] == 72
+    assert by_systolic[118]["notes"] == "after rest"
 
 
 def test_import_persists_to_db(client: TestClient):
@@ -195,7 +200,7 @@ def test_import_persists_to_db(client: TestClient):
         {"systolic": 120, "diastolic": 80, "measured_at": "2024-02-01T09:00:00"},
         {"systolic": 130, "diastolic": 85, "measured_at": "2024-02-02T09:00:00"},
     ]
-    client.post(BASE_URL + "/import", json=payload)
+    client.post(BASE_URL + "/import", files=_json_file(payload))
     response = client.get(BASE_URL + "/")
     assert len(response.json()) == 2
 
@@ -209,11 +214,33 @@ def test_import_invalid_data(client: TestClient):
             "measured_at": "2024-01-11T08:00:00",
         },
     ]
-    response = client.post(BASE_URL + "/import", json=payload)
+    response = client.post(BASE_URL + "/import", files=_json_file(payload))
+    assert response.status_code == 422
+    assert client.get(BASE_URL + "/").json() == []
+
+
+def test_import_invalid_json(client: TestClient):
+    response = client.post(
+        BASE_URL + "/import",
+        files={"file": ("data.json", b"not valid json", "application/json")},
+    )
+    assert response.status_code == 422
+    assert client.get(BASE_URL + "/").json() == []
+
+
+def test_import_not_a_list(client: TestClient):
+    payload = {"systolic": 120, "diastolic": 80, "measured_at": MEASURED_AT}
+    response = client.post(BASE_URL + "/import", files=_json_file(payload))
+    assert response.status_code == 422
+
+
+def test_import_missing_file(client: TestClient):
+    response = client.post(BASE_URL + "/import")
     assert response.status_code == 422
 
 
 def test_import_empty_list(client: TestClient):
-    response = client.post(BASE_URL + "/import", json=[])
+    response = client.post(BASE_URL + "/import", files=_json_file([]))
     assert response.status_code == 201
-    assert response.json() == []
+    assert response.content == b""
+    assert client.get(BASE_URL + "/").json() == []

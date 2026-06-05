@@ -1,8 +1,10 @@
+import json
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile
 from fastapi.responses import StreamingResponse
+from pydantic import TypeAdapter, ValidationError
 from sqlmodel import Session
 
 from app.database import get_session
@@ -29,11 +31,22 @@ def create_blood_glucose(
     return BloodGlucoseRepository(session).create(data)
 
 
-@router.post("/import", response_model=list[BloodGlucoseRead], status_code=201)
-def import_blood_glucose(
-    data: list[BloodGlucoseCreate], session: Session = Depends(get_session)
+@router.post("/import", status_code=201)
+async def import_blood_glucose(
+    file: UploadFile = File(...),
+    session: Session = Depends(get_session),
 ):
-    return BloodGlucoseRepository(session).bulk_create(data)
+    content = await file.read()
+    try:
+        payload = json.loads(content)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=422, detail=f"Invalid JSON: {exc}")
+    try:
+        items = TypeAdapter(list[BloodGlucoseCreate]).validate_python(payload)
+    except ValidationError as exc:
+        raise HTTPException(status_code=422, detail=exc.errors())
+    BloodGlucoseRepository(session).bulk_create(items)
+    return Response(status_code=201)
 
 
 @router.get("/chart", response_class=StreamingResponse)
