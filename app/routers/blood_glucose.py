@@ -10,6 +10,7 @@ from sqlmodel import Session
 from app.database import get_session
 from app.diagrams.blood_glucose import render_chart
 from app.repositories.blood_glucose import BloodGlucoseRepository
+from app.repositories.exceptions import DuplicateMeasurementError
 from app.schemas.blood_glucose import (
     BloodGlucoseCreate,
     BloodGlucoseRead,
@@ -28,7 +29,10 @@ def list_blood_glucose(session: Session = Depends(get_session)):
 def create_blood_glucose(
     data: BloodGlucoseCreate, session: Session = Depends(get_session)
 ):
-    return BloodGlucoseRepository(session).create(data)
+    try:
+        return BloodGlucoseRepository(session).create(data)
+    except DuplicateMeasurementError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
 
 
 @router.post("/import", status_code=201)
@@ -45,7 +49,10 @@ async def import_blood_glucose(
         items = TypeAdapter(list[BloodGlucoseCreate]).validate_python(payload)
     except ValidationError as exc:
         raise HTTPException(status_code=422, detail=exc.errors())
-    BloodGlucoseRepository(session).bulk_create(items)
+    try:
+        BloodGlucoseRepository(session).bulk_create(items)
+    except DuplicateMeasurementError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
     return Response(status_code=201)
 
 
@@ -73,7 +80,10 @@ def get_blood_glucose(record_id: int, session: Session = Depends(get_session)):
 def update_blood_glucose(
     record_id: int, data: BloodGlucoseUpdate, session: Session = Depends(get_session)
 ):
-    record = BloodGlucoseRepository(session).update(record_id, data)
+    try:
+        record = BloodGlucoseRepository(session).update(record_id, data)
+    except DuplicateMeasurementError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
     if not record:
         raise HTTPException(status_code=404, detail="Record not found")
     return record

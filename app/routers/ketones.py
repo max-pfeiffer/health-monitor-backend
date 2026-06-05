@@ -9,6 +9,7 @@ from sqlmodel import Session
 
 from app.database import get_session
 from app.diagrams.ketones import render_chart
+from app.repositories.exceptions import DuplicateMeasurementError
 from app.repositories.ketones import KetonesRepository
 from app.schemas.ketones import KetonesCreate, KetonesRead, KetonesUpdate
 
@@ -22,7 +23,10 @@ def list_ketones(session: Session = Depends(get_session)):
 
 @router.post("/", response_model=KetonesRead, status_code=201)
 def create_ketones(data: KetonesCreate, session: Session = Depends(get_session)):
-    return KetonesRepository(session).create(data)
+    try:
+        return KetonesRepository(session).create(data)
+    except DuplicateMeasurementError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
 
 
 @router.post("/import", status_code=201)
@@ -39,7 +43,10 @@ async def import_ketones(
         items = TypeAdapter(list[KetonesCreate]).validate_python(payload)
     except ValidationError as exc:
         raise HTTPException(status_code=422, detail=exc.errors())
-    KetonesRepository(session).bulk_create(items)
+    try:
+        KetonesRepository(session).bulk_create(items)
+    except DuplicateMeasurementError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
     return Response(status_code=201)
 
 
@@ -67,7 +74,10 @@ def get_ketones(record_id: int, session: Session = Depends(get_session)):
 def update_ketones(
     record_id: int, data: KetonesUpdate, session: Session = Depends(get_session)
 ):
-    record = KetonesRepository(session).update(record_id, data)
+    try:
+        record = KetonesRepository(session).update(record_id, data)
+    except DuplicateMeasurementError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
     if not record:
         raise HTTPException(status_code=404, detail="Record not found")
     return record

@@ -58,11 +58,47 @@ def test_list_empty(client: TestClient):
 def test_list(client: TestClient, record: dict):
     client.post(
         BASE_URL + "/",
-        json={"systolic": 130, "diastolic": 85, "measured_at": MEASURED_AT},
+        json={
+            "systolic": 130,
+            "diastolic": 85,
+            "measured_at": "2024-01-16T10:00:00",
+        },
     )
     response = client.get(BASE_URL + "/")
     assert response.status_code == 200
     assert len(response.json()) == 2
+
+
+def test_create_duplicate_measured_at(client: TestClient, record: dict):
+    response = client.post(
+        BASE_URL + "/",
+        json={"systolic": 130, "diastolic": 85, "measured_at": MEASURED_AT},
+    )
+    assert response.status_code == 409
+
+
+def test_update_conflicts_with_existing(client: TestClient, record: dict):
+    other = client.post(
+        BASE_URL + "/",
+        json={
+            "systolic": 130,
+            "diastolic": 85,
+            "measured_at": "2024-02-01T10:00:00",
+        },
+    ).json()
+    response = client.put(
+        f"{BASE_URL}/{other['id']}",
+        json={"measured_at": MEASURED_AT},
+    )
+    assert response.status_code == 409
+
+
+def test_update_same_measured_at_allowed(client: TestClient, record: dict):
+    response = client.put(
+        f"{BASE_URL}/{record['id']}",
+        json={"systolic": 125, "measured_at": MEASURED_AT},
+    )
+    assert response.status_code == 200
 
 
 def test_get(client: TestClient, record: dict):
@@ -203,6 +239,26 @@ def test_import_persists_to_db(client: TestClient):
     client.post(BASE_URL + "/import", files=_json_file(payload))
     response = client.get(BASE_URL + "/")
     assert len(response.json()) == 2
+
+
+def test_import_internal_duplicate(client: TestClient):
+    payload = [
+        {"systolic": 120, "diastolic": 80, "measured_at": "2024-03-01T08:00:00"},
+        {"systolic": 125, "diastolic": 82, "measured_at": "2024-03-01T08:00:00"},
+    ]
+    response = client.post(BASE_URL + "/import", files=_json_file(payload))
+    assert response.status_code == 409
+    assert client.get(BASE_URL + "/").json() == []
+
+
+def test_import_conflicts_with_existing(client: TestClient, record: dict):
+    payload = [
+        {"systolic": 130, "diastolic": 85, "measured_at": MEASURED_AT},
+        {"systolic": 118, "diastolic": 78, "measured_at": "2024-04-01T08:00:00"},
+    ]
+    response = client.post(BASE_URL + "/import", files=_json_file(payload))
+    assert response.status_code == 409
+    assert len(client.get(BASE_URL + "/").json()) == 1
 
 
 def test_import_invalid_data(client: TestClient):

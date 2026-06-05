@@ -13,5 +13,5 @@ class BloodGlucose(SQLModel, table=True):
     value: Decimal = Field(
         sa_column=sa.Column(sa.Numeric(precision=5, scale=2), nullable=False)
     )
-    measured_at: datetime
+    measured_at: datetime = Field(unique=True, index=True)
     notes: Optional[str] = None

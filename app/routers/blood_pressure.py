@@ -10,6 +10,7 @@ from sqlmodel import Session
 from app.database import get_session
 from app.diagrams.blood_pressure import render_chart
 from app.repositories.blood_pressure import BloodPressureRepository
+from app.repositories.exceptions import DuplicateMeasurementError
 from app.schemas.blood_pressure import (
     BloodPressureCreate,
     BloodPressureRead,
@@ -28,7 +29,10 @@ def list_blood_pressure(session: Session = Depends(get_session)):
 def create_blood_pressure(
     data: BloodPressureCreate, session: Session = Depends(get_session)
 ):
-    return BloodPressureRepository(session).create(data)
+    try:
+        return BloodPressureRepository(session).create(data)
+    except DuplicateMeasurementError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
 
 
 @router.post("/import", status_code=201)
@@ -45,7 +49,10 @@ async def import_blood_pressure(
         items = TypeAdapter(list[BloodPressureCreate]).validate_python(payload)
     except ValidationError as exc:
         raise HTTPException(status_code=422, detail=exc.errors())
-    BloodPressureRepository(session).bulk_create(items)
+    try:
+        BloodPressureRepository(session).bulk_create(items)
+    except DuplicateMeasurementError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
     return Response(status_code=201)
 
 
@@ -88,7 +95,10 @@ def get_blood_pressure(record_id: int, session: Session = Depends(get_session)):
 def update_blood_pressure(
     record_id: int, data: BloodPressureUpdate, session: Session = Depends(get_session)
 ):
-    record = BloodPressureRepository(session).update(record_id, data)
+    try:
+        record = BloodPressureRepository(session).update(record_id, data)
+    except DuplicateMeasurementError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
     if not record:
         raise HTTPException(status_code=404, detail="Record not found")
     return record
