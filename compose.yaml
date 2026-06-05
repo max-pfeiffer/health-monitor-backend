@@ -1,5 +1,5 @@
 services:
-  db:
+  postgresql:
     image: postgres:17
     environment:
       POSTGRES_USER: postgres
@@ -14,21 +14,29 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
-
-  app:
+  database-migrations:
+    image: database-migrations:latest
     build:
       context: .
       dockerfile: Containerfile
     environment:
-      DATABASE_URL: postgresql+psycopg2://postgres:postgres@db:5432/health_monitor
+      DATABASE_URL: postgresql+psycopg2://postgres:postgres@postgresql:5432/health_monitor
+      DATABASE_ALEMBIC_MIGRATION_ROLLBACK: false
+      DATABASE_ALEMBIC_MIGRATION_REVISION: INVALID
+    command: database-migrations
+    depends_on:
+      postgresql:
+        condition: service_healthy
+  health-monitor-backend:
+    build:
+      context: .
+      dockerfile: Containerfile
+    environment:
+      DATABASE_URL: postgresql+psycopg2://postgres:postgres@postgresql:5432/health_monitor
+    command: health-monitor-backend
     ports:
       - "8000:8000"
     depends_on:
-      db:
-        condition: service_healthy
-    command: >
-      sh -c "alembic upgrade head &&
-             uvicorn app.main:app --host 0.0.0.0 --port 8000"
-
+      - database-migrations
 volumes:
   postgres_data:

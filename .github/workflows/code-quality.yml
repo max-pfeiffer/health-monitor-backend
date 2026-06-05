@@ -14,7 +14,7 @@ jobs:
       - name: Setup uv
         uses: astral-sh/setup-uv@v7
         with:
-          python-version: "3.12"
+          python-version: "3.14"
       - name: Create Virtual environment
         run: uv sync
       - name: Run pre-commit hooks

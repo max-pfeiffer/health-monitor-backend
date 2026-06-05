@@ -74,6 +74,7 @@ def app_container(built_image: str, network, postgres: PostgresContainer, schema
         .with_network(network)
         .with_env("DATABASE_URL", internal_url)
         .with_bind_ports(8000, host_port)
+        .with_command("health-monitor-backend")
     )
     with container as running:
         wait_for_logs(running, "Uvicorn running on", timeout=60)
