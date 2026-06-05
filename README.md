@@ -7,6 +7,31 @@
 
 # Health Monitor Backend
 
+A Python REST API backend for tracking personal health metrics. It stores measurements for blood pressure, blood glucose, and blood ketones, and renders time-series diagrams of each metric as SVG images.
+
+## Features
+
+- **Blood pressure** — record systolic, diastolic, and pulse readings
+- **Blood glucose** — record glucose values in mmol/L
+- **Blood ketones** — record ketone values in mmol/L
+- **Diagrams** — each metric has a chart endpoint that returns an SVG line chart with optional time-range filtering
+- **Bulk import** — JSON import endpoint for each metric
+- **Versioned API** — all endpoints live under `/api/v1/`
+
+## Stack
+
+| Concern | Tool |
+|---|---|
+| Language | Python |
+| Framework | [FastAPI](https://fastapi.tiangolo.com/) |
+| ORM | [SQLModel](https://sqlmodel.tiangolo.com/) + SQLAlchemy |
+| Database | PostgreSQL |
+| Migrations | Alembic |
+| Diagrams | seaborn + matplotlib |
+| Package manager | [uv](https://docs.astral.sh/uv/) |
+| Container | Podman |
+| Deployment | Kubernetes |
+
 ## Development
 
 ### Prerequisites
