@@ -16,6 +16,8 @@ The application should capture and store the following health metrics:
 It provides REST API endpoints for storing the health metrics data. 
 It also provides REST API endpoints which render diagrams for the health metrics as images.
 
+Users log into the frontend application with Keycloak. The logged in user can only do CRUD operations of his own data.
+
 ### Key Consumers
 
 The application provides a REST API backend for frontend applications.
@@ -32,6 +34,7 @@ The application will run 24/7.
 
 - Data is stored in a database.
 - Different types of databases need to be supported: PostgreSQL
+- Keycloak as identity provider
 
 ### Git Repository
 - The git repository for this project is hosted on GitHub: https://github.com/max-pfeiffer/health-monitor-backend
@@ -78,6 +81,11 @@ The application will run 24/7.
 - Diagram endpoints should accept parameters for the time axis of the diagram. With parameters start and end time of the time axis can be specified.
 - For each health metric an endpoint is created to import bulk data in JSON format. The import fails when any data fails validation.
 
+### Authentication and Authorization
+- All API endpoints require authentication with bearer tokens
+- The user authenticated with the bearer token can do CRUD operations only with his own data
+- A user cannot access another users data
+
 ### Database
 - SQLModel models are the single source of truth for schema
 - Use type Decimal for numeric values with decimal places
@@ -108,7 +116,7 @@ The application will run 24/7.
 - Container test: testcontainers
 - CLI: click
 - Diagram rendering: seaborn, matplotlib
-
+- Authentication: bearer tokens from Keycloak IDP 
 
 ## Conventions
 

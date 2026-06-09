@@ -1,7 +1,13 @@
 import json
+from datetime import datetime
+from decimal import Decimal
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlmodel import Session
+
+from app.models.blood_glucose import BloodGlucose
+from tests.conftest import TEST_USER_ID_2
 
 BASE_URL = "/api/v1/blood-glucose"
 MEASURED_AT = "2024-01-15T10:00:00"
@@ -230,3 +236,34 @@ def test_import_empty_list(client: TestClient):
     assert response.status_code == 201
     assert response.content == b""
     assert client.get(BASE_URL + "/").json() == []
+
+
+def test_unauthenticated(client_no_auth: TestClient):
+    assert client_no_auth.get(BASE_URL + "/").status_code == 401
+    assert client_no_auth.post(BASE_URL + "/", json={}).status_code == 401
+    assert client_no_auth.get(f"{BASE_URL}/1").status_code == 401
+    assert client_no_auth.put(f"{BASE_URL}/1", json={}).status_code == 401
+    assert client_no_auth.delete(f"{BASE_URL}/1").status_code == 401
+    assert client_no_auth.get(f"{BASE_URL}/chart").status_code == 401
+    assert client_no_auth.post(BASE_URL + "/import").status_code == 401
+
+
+def test_user_isolation(client: TestClient, session: Session, record: dict):
+    other = BloodGlucose(
+        user_id=TEST_USER_ID_2,
+        value=Decimal("9.00"),
+        measured_at=datetime(2024, 5, 1, 10, 0, 0),
+    )
+    session.add(other)
+    session.commit()
+    session.refresh(other)
+
+    listed = client.get(BASE_URL + "/").json()
+    assert all(r["id"] != other.id for r in listed)
+    assert len(listed) == 1
+
+    assert client.get(f"{BASE_URL}/{other.id}").status_code == 404
+    assert (
+        client.put(f"{BASE_URL}/{other.id}", json={"value": "10.00"}).status_code == 404
+    )
+    assert client.delete(f"{BASE_URL}/{other.id}").status_code == 404

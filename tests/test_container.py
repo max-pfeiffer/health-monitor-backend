@@ -1,8 +1,14 @@
+import base64
+import json
 import socket
+import time
 from pathlib import Path
 
 import pytest
 import requests
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+from jose import jwt as jose_jwt
 from python_on_whales import DockerClient
 from python_on_whales.utils import run as pow_run
 from sqlalchemy import create_engine
@@ -24,6 +30,46 @@ def _free_port() -> int:
     with socket.socket() as s:
         s.bind(("", 0))
         return s.getsockname()[1]
+
+
+def _int_to_base64url(n: int) -> str:
+    length = (n.bit_length() + 7) // 8
+    return base64.urlsafe_b64encode(n.to_bytes(length, "big")).rstrip(b"=").decode()
+
+
+@pytest.fixture(scope="module")
+def test_auth():
+    """Returns (jwks_json_str, bearer_token) for a throwaway RSA key pair."""
+    private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    pub_nums = private_key.public_key().public_numbers()
+
+    jwks = {
+        "keys": [
+            {
+                "kty": "RSA",
+                "use": "sig",
+                "alg": "RS256",
+                "kid": "test-key-1",
+                "n": _int_to_base64url(pub_nums.n),
+                "e": _int_to_base64url(pub_nums.e),
+            }
+        ]
+    }
+
+    private_key_pem = private_key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.TraditionalOpenSSL,
+        encryption_algorithm=serialization.NoEncryption(),
+    ).decode()
+
+    token = jose_jwt.encode(
+        {"sub": "container-test-user", "exp": int(time.time()) + 3600},
+        private_key_pem,
+        algorithm="RS256",
+        headers={"kid": "test-key-1"},
+    )
+
+    return json.dumps(jwks), token
 
 
 @pytest.fixture(scope="module")
@@ -60,7 +106,10 @@ def schema(postgres: PostgresContainer):
 
 
 @pytest.fixture(scope="module")
-def app_container(built_image: str, network, postgres: PostgresContainer, schema):
+def app_container(
+    built_image: str, network, postgres: PostgresContainer, schema, test_auth
+):
+    jwks_json, _ = test_auth
     user = postgres.username
     password = postgres.password
     dbname = postgres.dbname
@@ -73,6 +122,7 @@ def app_container(built_image: str, network, postgres: PostgresContainer, schema
         DockerContainer(built_image)
         .with_network(network)
         .with_env("DATABASE_URL", internal_url)
+        .with_env("KEYCLOAK_JWKS_JSON", jwks_json)
         .with_bind_ports(8000, host_port)
         .with_command("health-monitor-backend")
     )
@@ -98,48 +148,60 @@ def test_docs_endpoint(app_container: str):
     assert "text/html" in response.headers["content-type"]
 
 
-def test_blood_pressure_crud(app_container: str):
+def test_blood_pressure_crud(app_container: str, test_auth):
+    _, token = test_auth
+    headers = {"Authorization": f"Bearer {token}"}
     base = f"{app_container}/api/v1/blood-pressure"
 
     create = requests.post(
         f"{base}/",
         json={"systolic": 120, "diastolic": 80, "measured_at": "2024-01-15T10:00:00"},
+        headers=headers,
         timeout=10,
     )
     assert create.status_code == 201
     record = create.json()
     record_id = record["id"]
 
-    get = requests.get(f"{base}/{record_id}", timeout=10)
+    get = requests.get(f"{base}/{record_id}", headers=headers, timeout=10)
     assert get.status_code == 200
     assert get.json()["systolic"] == 120
 
-    delete = requests.delete(f"{base}/{record_id}", timeout=10)
+    delete = requests.delete(f"{base}/{record_id}", headers=headers, timeout=10)
     assert delete.status_code == 204
 
 
-def test_blood_glucose_create(app_container: str):
+def test_blood_glucose_create(app_container: str, test_auth):
+    _, token = test_auth
     response = requests.post(
         f"{app_container}/api/v1/blood-glucose/",
         json={"value": "5.4", "measured_at": "2024-01-15T10:00:00"},
+        headers={"Authorization": f"Bearer {token}"},
         timeout=10,
     )
     assert response.status_code == 201
     assert response.json()["id"] is not None
 
 
-def test_ketones_create(app_container: str):
+def test_ketones_create(app_container: str, test_auth):
+    _, token = test_auth
     response = requests.post(
         f"{app_container}/api/v1/ketones/",
         json={"value": "1.2", "measured_at": "2024-01-15T10:00:00"},
+        headers={"Authorization": f"Bearer {token}"},
         timeout=10,
     )
     assert response.status_code == 201
     assert response.json()["id"] is not None
 
 
-def test_blood_pressure_chart(app_container: str):
-    response = requests.get(f"{app_container}/api/v1/blood-pressure/chart", timeout=10)
+def test_blood_pressure_chart(app_container: str, test_auth):
+    _, token = test_auth
+    response = requests.get(
+        f"{app_container}/api/v1/blood-pressure/chart",
+        headers={"Authorization": f"Bearer {token}"},
+        timeout=10,
+    )
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("image/svg+xml")
     assert b"<svg" in response.content

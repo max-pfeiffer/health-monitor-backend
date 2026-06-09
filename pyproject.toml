@@ -13,6 +13,8 @@ dependencies = [
     "click>=8.1",
     "seaborn>=0.13.2",
     "pandas>=3.0.3",
+    "python-jose[cryptography]>=3.3",
+    "httpx>=0.27",
 ]
 
 [dependency-groups]
