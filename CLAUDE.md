@@ -120,14 +120,15 @@ Coverage:
 
 #### Local manual testing
 - Podman compose is used for local manual testing
-- Configuration: compose.yaml (starts PostgreSQL, runs migrations, starts the app on port 8000)
-- The compose stack does not include Keycloak; run a separate Keycloak instance (default expected at `http://localhost:8080`) or set `KEYCLOAK_URL` to an existing instance
-- Obtain a JWT via the Keycloak admin UI or `curl` against the token endpoint, then paste it into the Swagger UI (`http://localhost:8000/docs`) Authorize dialog
-- The Swagger UI `Authorize` button accepts a Bearer token for trying out all endpoints
+- Configuration: compose.yaml (starts PostgreSQL, Keycloak, runs migrations, starts the app on port 8000)
+- Keycloak is preloaded from `compose/keycloak/realm.json` with realm `health-monitor`, client `health-monitor-swagger` (public, direct access grant), and user `tester`/`tester`
+- Obtain a JWT for the seeded `tester` user with `uv run python scripts/get_token.py`, then paste it into the Swagger UI (`http://localhost:8000/docs`) Authorize dialog
+- The Swagger UI `Authorize` button accepts a Bearer token (via the `HTTPBearer` security scheme) for trying out all endpoints
 
 ```
-podman-compose up          # start the full stack
-podman-compose down        # stop and remove containers
+podman compose up                          # start the full stack (PostgreSQL + Keycloak + app)
+podman compose down                        # stop and remove containers
+uv run python scripts/get_token.py         # fetch a JWT for the tester user
 ```
 
 ## Stack
