@@ -9,56 +9,34 @@ on:
 
 jobs:
   release:
+    if: ${{ !startsWith(github.event.head_commit.message, 'bump:') }}
     runs-on: ubuntu-24.04
     permissions:
       contents: write
     outputs:
-      version: ${{ steps.bump.outputs.version }}
-      bumped: ${{ steps.bump.outputs.bumped }}
+      version: ${{ steps.cz.outputs.version }}
+      bumped: ${{ steps.cz.outcome == 'success' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
+          token: ${{ secrets.RELEASE_TOKEN }}
           fetch-depth: 0
-      - name: Setup uv
-        uses: astral-sh/setup-uv@v7
+      - name: Bump version and update changelog
+        id: cz
+        continue-on-error: true
+        uses: commitizen-tools/commitizen-action@0.27.1
         with:
-          python-version: "3.14"
-      - name: Create virtual environment
-        run: uv sync
-      - name: Configure git
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-      - name: Bump version with commitizen
-        id: bump
-        run: |
-          set +e
-          output=$(uv run cz bump --yes --changelog 2>&1)
-          exit_code=$?
-          set -e
-          echo "$output"
-          if [ $exit_code -eq 0 ]; then
-            version=$(uv run cz version --project)
-            echo "version=${version}" >> "$GITHUB_OUTPUT"
-            echo "bumped=true" >> "$GITHUB_OUTPUT"
-            git push --follow-tags origin main
-          elif echo "$output" | grep -qE "NoCommitsFoundError|NoneIncrementExit|NoCommitsIncrementError"; then
-            echo "::notice::No bumpable commits since last tag; skipping release"
-            echo "bumped=false" >> "$GITHUB_OUTPUT"
-          else
-            exit $exit_code
-          fi
+          github_token: ${{ secrets.RELEASE_TOKEN }}
+          changelog_increment_filename: body.md
       - name: Create GitHub release
-        if: steps.bump.outputs.bumped == 'true'
+        if: steps.cz.outcome == 'success'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          version="${{ steps.bump.outputs.version }}"
-          uv run cz changelog --dry-run "${version}" > release_notes.md
-          gh release create "${version}" \
-            --title "${version}" \
-            --notes-file release_notes.md \
+          gh release create "${{ steps.cz.outputs.version }}" \
+            --title "${{ steps.cz.outputs.version }}" \
+            --notes-file body.md \
             --target main
 
   publish-image:
