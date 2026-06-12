@@ -4,6 +4,7 @@ import json
 import subprocess
 import sys
 import tempfile
+from copy import deepcopy
 from pathlib import Path
 
 import click
@@ -46,6 +47,48 @@ def generate_openapi_spec(worktree_path: Path) -> dict:
     return json.loads(result.stdout)
 
 
+def load_spec(file_path: Path) -> dict | None:
+    """Return the parsed YAML spec, or ``None`` if the file does not exist."""
+    if not file_path.exists():
+        return None
+    with open(file_path) as f:
+        return yaml.safe_load(f)
+
+
+def write_spec(output_file: Path, spec: dict) -> None:
+    with open(output_file, "w") as f:
+        yaml.dump(
+            spec,
+            f,
+            default_flow_style=False,
+            allow_unicode=True,
+            sort_keys=False,
+        )
+
+
+def comparable_spec(spec: dict) -> dict:
+    """Strip ``info.version`` so a version-only bump isn't treated as a spec change."""
+    copy = deepcopy(spec)
+    copy["info"].pop("version", None)
+    return copy
+
+
+def spec_filename(tag: str, api_version: str) -> str:
+    return f"health-monitor-backend_{tag}_api_{api_version}.yaml"
+
+
+def find_previous_spec(
+    output_path: Path, api_version: str, current_tag: str, tags: list[str]
+) -> dict | None:
+    """Return the most recent existing spec for ``api_version`` before the tag."""
+    idx = tags.index(current_tag)
+    for earlier_tag in reversed(tags[:idx]):
+        previous = load_spec(output_path / spec_filename(earlier_tag, api_version))
+        if previous is not None:
+            return previous
+    return None
+
+
 @click.command()
 @click.option(
     "--output-dir",
@@ -78,20 +121,24 @@ def main(output_dir: str) -> None:
             try:
                 api_versions = detect_api_versions(worktree_path)
                 spec = generate_openapi_spec(worktree_path)
+                comparable = comparable_spec(spec)
 
                 for api_version in api_versions:
-                    filename = f"health-monitor-backend_{tag}_api_{api_version}.yaml"
-                    output_file = output_path / filename
+                    output_file = output_path / spec_filename(tag, api_version)
 
-                    with open(output_file, "w") as f:
-                        yaml.dump(
-                            spec,
-                            f,
-                            default_flow_style=False,
-                            allow_unicode=True,
-                            sort_keys=False,
+                    previous = find_previous_spec(output_path, api_version, tag, tags)
+                    if previous is not None and comparable_spec(previous) == comparable:
+                        click.echo(
+                            f"  Skipped {api_version}: unchanged from previous version"
                         )
+                        continue
 
+                    existing = load_spec(output_file)
+                    if existing is not None and comparable_spec(existing) == comparable:
+                        click.echo(f"  Up-to-date: {output_file}")
+                        continue
+
+                    write_spec(output_file, spec)
                     click.echo(f"  Written: {output_file}")
             finally:
                 subprocess.run(
