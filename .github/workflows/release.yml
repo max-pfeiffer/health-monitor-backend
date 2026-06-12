@@ -107,7 +107,7 @@ jobs:
         run: uv sync
       - name: Generate API docs
         run: uv run python scripts/export_openapi.py
-      - name: Open pull request with API docs
+      - name: Open and auto-merge pull request with API docs
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
@@ -123,8 +123,9 @@ jobs:
           git checkout -b "${branch}"
           git commit -m "docs: regenerate OpenAPI specs for ${version}"
           git push --force-with-lease origin "${branch}"
-          gh pr create \
+          pr_url=$(gh pr create \
             --base main \
             --head "${branch}" \
             --title "docs: regenerate OpenAPI specs for ${version}" \
-            --body "Automatically generated OpenAPI specs for release \`${version}\`."
+            --body "Automatically generated OpenAPI specs for release \`${version}\`.")
+          gh pr merge "${pr_url}" --squash --auto --delete-branch
