@@ -85,14 +85,19 @@ jobs:
     needs: release
     if: needs.release.outputs.bumped == 'true'
     runs-on: ubuntu-24.04
-    permissions:
-      contents: write
-      pull-requests: write
     steps:
+      - name: Mint GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.RELEASE_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
+          repositories: ${{ github.repository }}
       - name: Checkout repository at release tag
         uses: actions/checkout@v6
         with:
           ref: ${{ needs.release.outputs.version }}
+          token: ${{ steps.app-token.outputs.token }}
           fetch-depth: 0
       - name: Setup uv
         uses: astral-sh/setup-uv@v7
@@ -104,7 +109,7 @@ jobs:
         run: uv run python scripts/export_openapi.py
       - name: Open pull request with API docs
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           version="${{ needs.release.outputs.version }}"
           git config user.name "github-actions[bot]"
