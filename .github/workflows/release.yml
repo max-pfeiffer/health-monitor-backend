@@ -128,4 +128,5 @@ jobs:
             --head "${branch}" \
             --title "docs: regenerate OpenAPI specs for ${version}" \
             --body "Automatically generated OpenAPI specs for release \`${version}\`.")
-          gh pr merge "${pr_url}" --squash --auto --delete-branch
+          gh pr merge "${pr_url}" --squash --delete-branch --auto || \
+            gh pr merge "${pr_url}" --squash --delete-branch

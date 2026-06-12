@@ -85,6 +85,11 @@ The application will run 24/7.
 - For each health metric an endpoint is created to import bulk data in JSON format. The import fails when any data fails validation.
 - All api parameters or fields need to be provided in ISO 8601 format
 
+### CORS
+- FastAPI's `CORSMiddleware` is configured in `app/main.py` and handles preflight `OPTIONS` requests
+- Allowed origins are driven by env var `CORS_ALLOWED_ORIGINS` (comma-separated list); production points it at the real frontend URL
+- Fixed config: `allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]`, `allow_headers=["Authorization", "Content-Type"]`, `allow_credentials=False`
+
 ### Authentication and Authorization
 - All API endpoints require authentication with bearer tokens
 - The user authenticated with the bearer token can do CRUD operations only with his own data
@@ -158,12 +163,14 @@ uv run python scripts/get_token.py         # fetch a JWT for the tester user
 - `KEYCLOAK_URL` — Keycloak base URL (default: `http://localhost:8080`)
 - `KEYCLOAK_REALM` — Keycloak realm name (default: `health-monitor`)
 - `KEYCLOAK_JWKS_JSON` — Optional: inline JWKS JSON string, bypasses fetching from Keycloak (used in container integration tests only)
+- `CORS_ALLOWED_ORIGINS` — Comma-separated list of origins allowed by `CORSMiddleware` (default: `http://localhost:5173`)
 
 Minimal `.env` for local development (defaults work if Keycloak runs on localhost):
 ```
 DATABASE_URL=postgresql+psycopg2://postgres:postgres@localhost:5432/health_monitor
 KEYCLOAK_URL=http://localhost:8080
 KEYCLOAK_REALM=health-monitor
+CORS_ALLOWED_ORIGINS=http://localhost:5173
 ```
 
 ## Adding a New Health Metric

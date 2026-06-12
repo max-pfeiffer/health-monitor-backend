@@ -18,6 +18,7 @@ A Python REST API backend for tracking personal health metrics. It stores measur
 - **Bulk import** — JSON import endpoint for each metric
 - **Versioned API** — all endpoints live under `/api/v1/`
 - **Authentication** — all endpoints require an RS256 JWT bearer token issued by Keycloak; users can only access their own data (scoped by the `sub` claim)
+- **CORS** — FastAPI's `CORSMiddleware` handles preflight `OPTIONS` requests; allowed origins are driven by `CORS_ALLOWED_ORIGINS` so production can point at the real frontend URL
 
 ## Stack
 
@@ -97,6 +98,7 @@ Edit `.env` and point `DATABASE_URL` at your PostgreSQL instance. The full set o
 | `KEYCLOAK_URL` | `http://localhost:8080` | Keycloak base URL (JWKS is fetched from here) |
 | `KEYCLOAK_REALM` | `health-monitor` | Keycloak realm name |
 | `KEYCLOAK_JWKS_JSON` | _(unset)_ | Optional inline JWKS JSON — bypasses fetching from Keycloak. Used in container integration tests only. |
+| `CORS_ALLOWED_ORIGINS` | `http://localhost:5173` | Comma-separated list of origins permitted by the CORS middleware (e.g. `https://app.example.com,https://admin.example.com`). |
 
 ### Run migrations
 
