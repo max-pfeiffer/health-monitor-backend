@@ -89,31 +89,48 @@ uv run ruff format .
 
 ### Running with Podman Compose
 
-`compose.yaml` starts a PostgreSQL 17 database and the application container together. This is useful for running the full stack locally without a separate database setup.
+`compose.yaml` starts the full local stack: PostgreSQL 17, a Keycloak instance preloaded with a `health-monitor` realm and a tester user, the database-migrations job, and the application container.
 
 **Prerequisites:** [Podman](https://podman.io/) with the `podman-compose` plugin (or the standalone `podman compose` command).
 
-Build and start both services:
+Build and start everything:
 
 ```bash
 podman compose up --build
 ```
 
-The app runs migrations automatically on startup. Once running:
+Once the stack is up:
 
 - API: `http://localhost:8000`
 - Interactive docs: `http://localhost:8000/docs`
+- Keycloak: `http://localhost:8080` (admin console: `admin` / `admin`)
 
-Stop and remove containers (data volume is preserved):
+#### Authenticate against the API
+
+The realm import (`compose/keycloak/realm.json`) pre-creates:
+
+| Field | Value |
+|---|---|
+| Realm | `health-monitor` |
+| Client | `health-monitor-swagger` (public, direct access grant) |
+| User | `tester` / `tester` |
+
+Fetch a JWT for the `tester` user:
 
 ```bash
-podman compose down
+uv run python scripts/get_token.py            # prints the token to stdout
+uv run python scripts/get_token.py | pbcopy   # macOS: copy to clipboard
 ```
 
-To also remove the persistent database volume:
+Then open `http://localhost:8000/docs`, click **Authorize**, paste the token into the `HTTPBearer` field, and use **Try it out** on any endpoint.
+
+To target a different user or client, pass `--username`, `--password`, or `--client-id`. Run `uv run python scripts/get_token.py --help` for all options.
+
+#### Stop the stack
 
 ```bash
-podman compose down -v
+podman compose down       # stop containers (PostgreSQL volume preserved)
+podman compose down -v    # also remove the PostgreSQL volume
 ```
 
 ### Git pre-commit hooks

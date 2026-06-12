@@ -4,8 +4,12 @@ from sqlalchemy import create_engine
 from sqlmodel import Session, SQLModel
 from testcontainers.postgres import PostgresContainer
 
+from app.auth import get_current_user_id
 from app.database import get_session
 from app.main import app
+
+TEST_USER_ID = "user-1"
+TEST_USER_ID_2 = "user-2"
 
 
 @pytest.fixture(scope="session")
@@ -34,6 +38,21 @@ def session(engine, setup_tables):
 
 @pytest.fixture
 def client(session: Session):
+    def override_get_session():
+        yield session
+
+    def override_get_current_user_id():
+        return TEST_USER_ID
+
+    app.dependency_overrides[get_session] = override_get_session
+    app.dependency_overrides[get_current_user_id] = override_get_current_user_id
+    with TestClient(app) as c:
+        yield c
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def client_no_auth(session: Session):
     def override_get_session():
         yield session
 

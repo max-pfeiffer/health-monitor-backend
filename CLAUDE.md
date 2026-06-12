@@ -16,6 +16,8 @@ The application should capture and store the following health metrics:
 It provides REST API endpoints for storing the health metrics data. 
 It also provides REST API endpoints which render diagrams for the health metrics as images.
 
+Users log into the frontend application with Keycloak. The logged-in user can only do CRUD operations of his own data.
+
 ### Key Consumers
 
 The application provides a REST API backend for frontend applications.
@@ -31,7 +33,8 @@ The application will run 24/7.
 ### Expected Integrations
 
 - Data is stored in a database.
-- Different types of databases need to be supported: PostgreSQL
+- Database: PostgreSQL
+- Keycloak as identity provider
 
 ### Git Repository
 - The git repository for this project is hosted on GitHub: https://github.com/max-pfeiffer/health-monitor-backend
@@ -40,8 +43,8 @@ The application will run 24/7.
 - Bug fixes need to be created on branches with bugfix/* pattern
 
 #### GitHub Workflows
-- Git pre-commit hooks are run using GitHub actions when a new merge request is created or updated
-- Unit test should be run always using GitHub actions when a new merge request is created or updated
+- Git pre-commit hooks are run using GitHub actions and locally when a new pull request is created or updated (local hooks + CI checks on PR)
+- Unit test should be run always using GitHub actions when a new pull request is created or updated
 - A new release on GitHub is created when the main branch is tagged with a semantic version
 - Release notes are generated automatically
 - When a new release is created using by tagging the main branch, the container image is build and pushed to Docker Hub
@@ -52,6 +55,7 @@ The application will run 24/7.
 ## Architecture
 
 ### Project Structure
+- `.github/` — GitHub workflows
 - `app/` — main application package
 - `app/main.py` — FastAPI app entry point
 - `app/config.py` — settings via pydantic-settings (reads from `.env`)
@@ -64,6 +68,7 @@ The application will run 24/7.
 - `app/routers/` — FastAPI routers (one file per health metric)
 - `alembic/` — database migrations
 - `tests/` — pytest tests
+- `scripts/` — scripts used for CI/CD tasks (`build.py` builds/pushes the container image, `export_openapi.py` generates OpenAPI YAML specs)
 
 ### Code Structure
 - Use Repository pattern for data CRUD operations
@@ -75,8 +80,15 @@ The application will run 24/7.
 - The root endpoint of the application forwards to the API docs
 - REST endpoints follow `/api/v1/<resource>` naming
 - Diagram endpoints return SVG images via `StreamingResponse` 
-- Diagram endpoints should accept parameters for the time axis of the diagram. With parameters start and end time of the time axis can be specified.
+- Diagram endpoints should accept parameters for the time axis of the diagram (ISO 8601). With parameters start and end time of the time axis can be specified.
 - For each health metric an endpoint is created to import bulk data in JSON format. The import fails when any data fails validation.
+
+### Authentication and Authorization
+- All API endpoints require authentication with bearer tokens
+- The user authenticated with the bearer token can do CRUD operations only with his own data
+- A user cannot access another users data
+- Tokens are RS256-signed JWTs issued by Keycloak; the app fetches the JWKS from `{KEYCLOAK_URL}/realms/{KEYCLOAK_REALM}/protocol/openid-connect/certs`
+- The `sub` claim is used as the user identity (`user_id`) for scoping all data access
 
 ### Database
 - SQLModel models are the single source of truth for schema
@@ -90,6 +102,34 @@ The application will run 24/7.
 - Building and running the container is tested with Python libraries
 - Use multiple stages in the containerfile to optimize image size
 - The image is published on DockerHub: https://hub.docker.com/
+
+```
+uv run python scripts/build.py --help    # see available commands
+uv run python scripts/build.py build     # build image locally with Podman
+uv run python scripts/build.py push      # push to DockerHub (requires podman login first)
+```
+
+### Tests
+
+#### Unit tests
+Coverage:
+- all API endpoints
+- database operations
+- generating diagrams
+- repositories
+
+#### Local manual testing
+- Podman compose is used for local manual testing
+- Configuration: compose.yaml (starts PostgreSQL, Keycloak, runs migrations, starts the app on port 8000)
+- Keycloak is preloaded from `compose/keycloak/realm.json` with realm `health-monitor`, client `health-monitor-swagger` (public, direct access grant), and user `tester`/`tester`
+- Obtain a JWT for the seeded `tester` user with `uv run python scripts/get_token.py`, then paste it into the Swagger UI (`http://localhost:8000/docs`) Authorize dialog
+- The Swagger UI `Authorize` button accepts a Bearer token (via the `HTTPBearer` security scheme) for trying out all endpoints
+
+```
+podman compose up                          # start the full stack (PostgreSQL + Keycloak + app)
+podman compose down                        # stop and remove containers
+uv run python scripts/get_token.py         # fetch a JWT for the tester user
+```
 
 ## Stack
 
@@ -108,9 +148,39 @@ The application will run 24/7.
 - Container test: testcontainers
 - CLI: click
 - Diagram rendering: seaborn, matplotlib
+- Authentication: bearer tokens from Keycloak IDP 
 
+## Environment Variables
+- `DATABASE_URL` — SQLAlchemy database URL (default: `postgresql+psycopg2://postgres:postgres@localhost:5432/health_monitor`)
+- `KEYCLOAK_URL` — Keycloak base URL (default: `http://localhost:8080`)
+- `KEYCLOAK_REALM` — Keycloak realm name (default: `health-monitor`)
+- `KEYCLOAK_JWKS_JSON` — Optional: inline JWKS JSON string, bypasses fetching from Keycloak (used in container integration tests only)
+
+Minimal `.env` for local development (defaults work if Keycloak runs on localhost):
+```
+DATABASE_URL=postgresql+psycopg2://postgres:postgres@localhost:5432/health_monitor
+KEYCLOAK_URL=http://localhost:8080
+KEYCLOAK_REALM=health-monitor
+```
+
+## Adding a New Health Metric
+
+Checklist when adding a new metric (e.g. `blood_oxygen`):
+
+1. `app/models/<metric>.py` — SQLModel table model (import it in `alembic/env.py`)
+2. `app/schemas/<metric>.py` — Pydantic request/response schemas
+3. `app/repositories/<metric>.py` — repository class for CRUD operations
+4. `app/diagrams/<metric>.py` — Matplotlib SVG rendering function
+5. `app/routers/<metric>.py` — FastAPI router with all endpoints
+6. `app/routers/v1.py` — register the new router
+7. `uv run alembic revision --autogenerate -m "add <metric> table"` — generate migration
+8. `tests/` — add tests covering all endpoints, repository, and diagram
 
 ## Conventions
+
+### Git commits
+
+- For git commit messages conventional commits specification is used: https://www.conventionalcommits.org/en/v1.0.0/#specification
 
 ### Setup
 Development setup needs both the main and the dev dependencies. Production setup needs only the main dependencies (no pytest, ruff, pre-commit, testcontainers, etc.).
@@ -150,9 +220,3 @@ uv run pre-commit install              # install hooks once after cloning
 uv run pre-commit run --all-files      # run all hooks against the whole repo
 uv run pre-commit autoupdate           # update hook versions
 ```
-
-### Unit tests need to cover
-- all API endpoints
-- database operations
-- generating diagrams
-- repositories
