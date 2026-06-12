@@ -1,3 +1,9 @@
+## 0.6.1 (2026-06-12)
+
+### Fix
+
+- export-api-docs job in release workflow
+
 ## 0.6.0 (2026-06-12)
 
 ### Feat

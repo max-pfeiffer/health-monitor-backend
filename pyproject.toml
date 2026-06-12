@@ -1,6 +1,6 @@
 [project]
 name = "health-monitor-backend"
-version = "0.6.0"
+version = "0.6.1"
 description = "Health metrics monitoring backend"
 requires-python = ">=3.14"
 dependencies = [
@@ -42,7 +42,7 @@ addopts = "--cov=app --cov-report=xml --cov-report=term"
 
 [tool.commitizen]
 name = "cz_conventional_commits"
-version = "0.6.0"
+version = "0.6.1"
 version_files = ["pyproject.toml:^version"]
 tag_format = "$version"
 update_changelog_on_bump = true
