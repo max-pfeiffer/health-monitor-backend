@@ -38,7 +38,7 @@ The application will run 24/7.
 
 ### Git Repository
 - The git repository for this project is hosted on GitHub: https://github.com/max-pfeiffer/health-monitor-backend
-- The default branch is main. This branch is protected.
+- The default branch is main. main branch is protected.
 - Features need to be created on branches with feature/* pattern
 - Bug fixes need to be created on branches with bugfix/* pattern
 
