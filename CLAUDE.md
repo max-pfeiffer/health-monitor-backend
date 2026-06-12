@@ -80,8 +80,9 @@ The application will run 24/7.
 - The root endpoint of the application forwards to the API docs
 - REST endpoints follow `/api/v1/<resource>` naming
 - Diagram endpoints return SVG images via `StreamingResponse` 
-- Diagram endpoints should accept parameters for the time axis of the diagram (ISO 8601). With parameters start and end time of the time axis can be specified.
+- Diagram endpoints should accept parameters for the time axis of the diagram. With parameters start and end time of the time axis can be specified.
 - For each health metric an endpoint is created to import bulk data in JSON format. The import fails when any data fails validation.
+- All api parameters or fields need to be provided in ISO 8601 format
 
 ### Authentication and Authorization
 - All API endpoints require authentication with bearer tokens
@@ -143,6 +144,7 @@ uv run python scripts/get_token.py         # fetch a JWT for the tester user
 - Test runner: pytest
 - Linter/formatter: Ruff
 - git pre-commit hooks: pre-commit
+- Conventional commits: commitizen
 - Container: Podman
 - Container build: python-on-whales
 - Container test: testcontainers
@@ -214,9 +216,13 @@ uv run ruff format .   # format
 ```
 
 ### Git pre-commit hooks
-Hooks are defined in `.pre-commit-config.yaml` and enforced in CI by the `Code quality` workflow. They run Ruff lint and format on staged files before every commit.
+Hooks are defined in `.pre-commit-config.yaml` and enforced in CI by the `Code quality` workflow.
+They run Ruff lint and format on staged files before every commit, and commitizen validates commit messages against the conventional commits specification.
+Hooks need to be run locally after all code changes are made to ensure code is linted and formatted.
 ```
-uv run pre-commit install              # install hooks once after cloning
-uv run pre-commit run --all-files      # run all hooks against the whole repo
-uv run pre-commit autoupdate           # update hook versions
+uv run pre-commit install                          # install pre-commit hooks once after cloning
+uv run pre-commit install --hook-type commit-msg   # install commit-msg hook for conventional commits
+uv run pre-commit run --all-files                  # run all hooks against the whole repo
+uv run pre-commit autoupdate                       # update hook versions
+uv run cz commit                                   # interactively craft a conventional commit
 ```
