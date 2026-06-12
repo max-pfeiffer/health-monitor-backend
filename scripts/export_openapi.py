@@ -80,7 +80,7 @@ def main(output_dir: str) -> None:
                 spec = generate_openapi_spec(worktree_path)
 
                 for api_version in api_versions:
-                    filename = f"openapi_app{tag}_api_{api_version}.yaml"
+                    filename = f"health-monitor-backend_{tag}_api_{api_version}.yaml"
                     output_file = output_path / filename
 
                     with open(output_file, "w") as f:

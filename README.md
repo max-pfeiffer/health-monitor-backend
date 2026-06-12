@@ -87,6 +87,17 @@ uv run ruff check .
 uv run ruff format .
 ```
 
+### Generate API docs
+
+OpenAPI YAML specs for every released version live in `api_docs/` and are regenerated automatically on each new release tag. To regenerate them manually:
+
+```bash
+uv run python scripts/export_openapi.py                       # write to api_docs/
+uv run python scripts/export_openapi.py --output-dir /tmp/out # custom output directory
+```
+
+The script iterates over every git tag, checks each one out into a temporary worktree, imports the FastAPI app, and writes one YAML file per API version (e.g. `health-monitor-backend_0.5.0_api_v1.yaml`). Make sure all release tags are fetched locally (`git fetch --tags`) before running.
+
 ### Running with Podman Compose
 
 `compose.yaml` starts the full local stack: PostgreSQL 17, a Keycloak instance preloaded with a `health-monitor` realm and a tester user, the database-migrations job, and the application container.
