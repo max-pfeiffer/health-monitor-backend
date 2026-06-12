@@ -1,3 +1,15 @@
+## 0.8.0 (2026-06-12)
+
+### Feat
+
+- application learned to deal with CORS
+- new api docs are only generated when api did change compared to previous version
+- test and code quality workflows don't run when readme or api docs were changed
+
+### Fix
+
+- export api docs
+
 ## 0.7.0 (2026-06-12)
 
 ### Feat
