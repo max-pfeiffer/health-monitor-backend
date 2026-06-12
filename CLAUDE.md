@@ -16,7 +16,7 @@ The application should capture and store the following health metrics:
 It provides REST API endpoints for storing the health metrics data. 
 It also provides REST API endpoints which render diagrams for the health metrics as images.
 
-Users log into the frontend application with Keycloak. The logged in user can only do CRUD operations of his own data.
+Users log into the frontend application with Keycloak. The logged-in user can only do CRUD operations of his own data.
 
 ### Key Consumers
 
@@ -43,8 +43,9 @@ The application will run 24/7.
 - Bug fixes need to be created on branches with bugfix/* pattern
 
 #### GitHub Workflows
-- Git pre-commit hooks are run using GitHub actions when a new merge request is created or updated
-- Unit test should be run always using GitHub actions when a new merge request is created or updated
+- For git commit messages conventional commits specification is used: https://www.conventionalcommits.org/en/v1.0.0/#specification
+- Git pre-commit hooks are run using GitHub actions and locally when a new pull request is created or updated (local hooks + CI checks on PR)
+- Unit test should be run always using GitHub actions when a new pull request is created or updated
 - A new release on GitHub is created when the main branch is tagged with a semantic version
 - Release notes are generated automatically
 - When a new release is created using by tagging the main branch, the container image is build and pushed to Docker Hub
@@ -98,6 +99,13 @@ The application will run 24/7.
 - Building and running the container is tested with Python libraries
 - Use multiple stages in the containerfile to optimize image size
 - The image is published on DockerHub: https://hub.docker.com/
+
+### Unit tests
+Coverage:
+- all API endpoints
+- database operations
+- generating diagrams
+- repositories
 
 ## Stack
 
@@ -158,9 +166,3 @@ uv run pre-commit install              # install hooks once after cloning
 uv run pre-commit run --all-files      # run all hooks against the whole repo
 uv run pre-commit autoupdate           # update hook versions
 ```
-
-### Unit tests need to cover
-- all API endpoints
-- database operations
-- generating diagrams
-- repositories
