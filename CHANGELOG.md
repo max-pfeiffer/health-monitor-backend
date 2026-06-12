@@ -1,3 +1,9 @@
+## 0.7.0 (2026-06-12)
+
+### Feat
+
+- export-api-docs job in release flow is automatically merging the pr
+
 ## 0.6.1 (2026-06-12)
 
 ### Fix
