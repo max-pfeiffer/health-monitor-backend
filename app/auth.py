@@ -3,12 +3,12 @@ from functools import lru_cache
 
 import httpx
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 
 from app.config import settings
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+bearer_scheme = HTTPBearer(auto_error=False)
 
 _credentials_exception = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -31,10 +31,14 @@ def _get_jwks() -> dict:
         return resp.json()
 
 
-def get_current_user_id(token: str = Depends(oauth2_scheme)) -> str:
+def get_current_user_id(
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+) -> str:
+    if credentials is None:
+        raise _credentials_exception
     try:
         payload = jwt.decode(
-            token,
+            credentials.credentials,
             _get_jwks(),
             algorithms=["RS256"],
             options={"verify_aud": False},
