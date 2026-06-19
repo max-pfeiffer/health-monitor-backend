@@ -4,7 +4,7 @@ import sys
 import time
 
 import click
-import httpx
+import httpx2
 
 
 @click.command()
@@ -63,7 +63,7 @@ def main(
         _wait_for_keycloak(keycloak_url, realm)
 
     try:
-        resp = httpx.post(
+        resp = httpx2.post(
             token_url,
             data={
                 "grant_type": "password",
@@ -73,7 +73,7 @@ def main(
             },
             timeout=10.0,
         )
-    except httpx.HTTPError as exc:
+    except httpx2.HTTPError as exc:
         click.echo(f"Failed to reach Keycloak at {token_url}: {exc}", err=True)
         sys.exit(1)
 
@@ -92,10 +92,10 @@ def _wait_for_keycloak(keycloak_url: str, realm: str, timeout: float = 60.0) -> 
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         try:
-            resp = httpx.get(discovery_url, timeout=2.0)
+            resp = httpx2.get(discovery_url, timeout=2.0)
             if resp.status_code == 200:
                 return
-        except httpx.HTTPError:
+        except httpx2.HTTPError:
             pass
         time.sleep(2.0)
     click.echo(
