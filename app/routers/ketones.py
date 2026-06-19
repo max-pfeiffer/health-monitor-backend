@@ -1,9 +1,16 @@
 import json
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 
-from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile
-from fastapi.responses import StreamingResponse
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    HTTPException,
+    Request,
+    Response,
+    UploadFile,
+)
 from pydantic import TypeAdapter, ValidationError
 from sqlmodel import Session
 
@@ -12,6 +19,7 @@ from app.database import get_session
 from app.diagrams.ketones import render_chart
 from app.repositories.exceptions import DuplicateMeasurementError
 from app.repositories.ketones import KetonesRepository
+from app.routers.chart_response import chart_response, validate_time_range
 from app.schemas.ketones import KetonesCreate, KetonesRead, KetonesUpdate
 
 router = APIRouter(prefix="/ketones", tags=["ketones"])
@@ -59,16 +67,22 @@ async def import_ketones(
     return Response(status_code=201)
 
 
-@router.get("/chart", response_class=StreamingResponse)
+@router.get("/chart")
 def ketones_chart(
+    request: Request,
     start: Optional[datetime] = None,
     end: Optional[datetime] = None,
+    theme: Literal["light", "dark"] = "light",
     session: Session = Depends(get_session),
     user_id: str = Depends(get_current_user_id),
 ):
+    validate_time_range(start, end)
     records = KetonesRepository(session).get_in_range(user_id, start=start, end=end)
-    return StreamingResponse(
-        render_chart(records, start=start, end=end), media_type="image/svg+xml"
+    return chart_response(
+        request,
+        records,
+        lambda: render_chart(records, start=start, end=end, theme=theme),
+        etag_parts=[start, end, theme],
     )
 
 

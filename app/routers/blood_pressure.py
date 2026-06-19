@@ -1,9 +1,17 @@
 import json
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 
-from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile
-from fastapi.responses import StreamingResponse
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    HTTPException,
+    Query,
+    Request,
+    Response,
+    UploadFile,
+)
 from pydantic import TypeAdapter, ValidationError
 from sqlmodel import Session
 
@@ -12,6 +20,7 @@ from app.database import get_session
 from app.diagrams.blood_pressure import render_chart
 from app.repositories.blood_pressure import BloodPressureRepository
 from app.repositories.exceptions import DuplicateMeasurementError
+from app.routers.chart_response import chart_response, validate_time_range
 from app.schemas.blood_pressure import (
     BloodPressureCreate,
     BloodPressureRead,
@@ -63,23 +72,28 @@ async def import_blood_pressure(
     return Response(status_code=201)
 
 
-@router.get("/chart", response_class=StreamingResponse)
+@router.get("/chart")
 def blood_pressure_chart(
+    request: Request,
     start: Optional[datetime] = None,
     end: Optional[datetime] = None,
-    systolic_top: int = 135,
-    diastolic_top: int = 85,
+    systolic_top: int = Query(135, ge=0, le=400),
+    diastolic_top: int = Query(85, ge=0, le=400),
     show_systolic: bool = True,
     show_diastolic: bool = True,
     show_pulse: bool = True,
+    theme: Literal["light", "dark"] = "light",
     session: Session = Depends(get_session),
     user_id: str = Depends(get_current_user_id),
 ):
+    validate_time_range(start, end)
     records = BloodPressureRepository(session).get_in_range(
         user_id, start=start, end=end
     )
-    return StreamingResponse(
-        render_chart(
+    return chart_response(
+        request,
+        records,
+        lambda: render_chart(
             records,
             start=start,
             end=end,
@@ -88,8 +102,18 @@ def blood_pressure_chart(
             show_systolic=show_systolic,
             show_diastolic=show_diastolic,
             show_pulse=show_pulse,
+            theme=theme,
         ),
-        media_type="image/svg+xml",
+        etag_parts=[
+            start,
+            end,
+            systolic_top,
+            diastolic_top,
+            show_systolic,
+            show_diastolic,
+            show_pulse,
+            theme,
+        ],
     )
 
 

@@ -1,4 +1,5 @@
 import tomllib
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -6,13 +7,26 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 
 from app.config import settings
+from app.diagrams.base import configure_global_style
 from app.routers import v1
 
 _pyproject = tomllib.loads(
     (Path(__file__).resolve().parent.parent / "pyproject.toml").read_text()
 )
 
-app = FastAPI(title="Health Monitor Backend", version=_pyproject["project"]["version"])
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    # Apply global matplotlib/seaborn styling once, instead of on every request.
+    configure_global_style()
+    yield
+
+
+app = FastAPI(
+    title="Health Monitor Backend",
+    version=_pyproject["project"]["version"],
+    lifespan=lifespan,
+)
 
 app.add_middleware(
     CORSMiddleware,

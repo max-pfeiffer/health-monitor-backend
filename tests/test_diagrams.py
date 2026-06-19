@@ -1,6 +1,9 @@
+import re
 from datetime import datetime
 from decimal import Decimal
 from io import BytesIO
+
+import pytest
 
 from app.diagrams import blood_glucose, blood_pressure, ketones
 from app.models.blood_glucose import BloodGlucose
@@ -27,6 +30,54 @@ def _make_ketones(**kwargs) -> Ketones:
 
 def _is_svg(buf: BytesIO) -> bool:
     return b"<svg" in buf.read()
+
+
+def _svg_root_tag(buf: BytesIO) -> str:
+    text = buf.read().decode("utf-8")
+    match = re.search(r"<svg\b[^>]*>", text)
+    assert match is not None
+    return match.group(0)
+
+
+def _all_renderers():
+    return [
+        lambda theme="light": blood_pressure.render_chart(
+            [_make_blood_pressure()], None, None, 135, 85, True, True, True, theme
+        ),
+        lambda theme="light": blood_glucose.render_chart(
+            [_make_blood_glucose()], None, None, theme
+        ),
+        lambda theme="light": ketones.render_chart(
+            [_make_ketones()], None, None, theme
+        ),
+    ]
+
+
+# --- Responsive / accessible SVG (shared behaviour) ---
+
+
+@pytest.mark.parametrize("render", _all_renderers())
+def test_chart_is_responsive(render):
+    root = _svg_root_tag(render())
+    # viewBox is preserved so the SVG keeps its aspect ratio when scaled.
+    assert "viewBox=" in root
+    # Fixed pt width/height are stripped so it scales to its container via CSS.
+    assert "width=" not in root
+    assert "height=" not in root
+
+
+@pytest.mark.parametrize("render", _all_renderers())
+def test_chart_has_accessibility_markup(render):
+    buf = render()
+    root = _svg_root_tag(buf)
+    assert 'role="img"' in root
+    buf.seek(0)
+    assert b"<title>" in buf.read()
+
+
+@pytest.mark.parametrize("render", _all_renderers())
+def test_chart_dark_theme_renders(render):
+    assert _is_svg(render("dark"))
 
 
 # --- Blood Pressure ---
