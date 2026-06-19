@@ -1,7 +1,7 @@
 import json
 from functools import lru_cache
 
-import httpx
+import httpx2
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
@@ -25,7 +25,7 @@ def _get_jwks() -> dict:
         f"{settings.keycloak_url}/realms/{settings.keycloak_realm}"
         "/protocol/openid-connect/certs"
     )
-    with httpx.Client() as client:
+    with httpx2.Client() as client:
         resp = client.get(url, timeout=10.0)
         resp.raise_for_status()
         return resp.json()

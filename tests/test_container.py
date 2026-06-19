@@ -4,8 +4,8 @@ import socket
 import time
 from pathlib import Path
 
+import httpx2
 import pytest
-import requests
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from jose import jwt as jose_jwt
@@ -137,13 +137,13 @@ def test_build_produces_image(built_image: str):
 
 
 def test_root_redirects_to_docs(app_container: str):
-    response = requests.get(f"{app_container}/", allow_redirects=False, timeout=10)
+    response = httpx2.get(f"{app_container}/", follow_redirects=False, timeout=10)
     assert response.status_code == 307
     assert response.headers["location"].endswith("/docs")
 
 
 def test_docs_endpoint(app_container: str):
-    response = requests.get(f"{app_container}/docs", timeout=10)
+    response = httpx2.get(f"{app_container}/docs", timeout=10)
     assert response.status_code == 200
     assert "text/html" in response.headers["content-type"]
 
@@ -153,7 +153,7 @@ def test_blood_pressure_crud(app_container: str, test_auth):
     headers = {"Authorization": f"Bearer {token}"}
     base = f"{app_container}/api/v1/blood-pressure"
 
-    create = requests.post(
+    create = httpx2.post(
         f"{base}/",
         json={"systolic": 120, "diastolic": 80, "measured_at": "2024-01-15T10:00:00"},
         headers=headers,
@@ -163,17 +163,17 @@ def test_blood_pressure_crud(app_container: str, test_auth):
     record = create.json()
     record_id = record["id"]
 
-    get = requests.get(f"{base}/{record_id}", headers=headers, timeout=10)
+    get = httpx2.get(f"{base}/{record_id}", headers=headers, timeout=10)
     assert get.status_code == 200
     assert get.json()["systolic"] == 120
 
-    delete = requests.delete(f"{base}/{record_id}", headers=headers, timeout=10)
+    delete = httpx2.delete(f"{base}/{record_id}", headers=headers, timeout=10)
     assert delete.status_code == 204
 
 
 def test_blood_glucose_create(app_container: str, test_auth):
     _, token = test_auth
-    response = requests.post(
+    response = httpx2.post(
         f"{app_container}/api/v1/blood-glucose/",
         json={"value": "5.4", "measured_at": "2024-01-15T10:00:00"},
         headers={"Authorization": f"Bearer {token}"},
@@ -185,7 +185,7 @@ def test_blood_glucose_create(app_container: str, test_auth):
 
 def test_ketones_create(app_container: str, test_auth):
     _, token = test_auth
-    response = requests.post(
+    response = httpx2.post(
         f"{app_container}/api/v1/ketones/",
         json={"value": "1.2", "measured_at": "2024-01-15T10:00:00"},
         headers={"Authorization": f"Bearer {token}"},
@@ -197,7 +197,7 @@ def test_ketones_create(app_container: str, test_auth):
 
 def test_blood_pressure_chart(app_container: str, test_auth):
     _, token = test_auth
-    response = requests.get(
+    response = httpx2.get(
         f"{app_container}/api/v1/blood-pressure/chart",
         headers={"Authorization": f"Bearer {token}"},
         timeout=10,
@@ -226,7 +226,7 @@ def test_push_image_to_registry(built_image: str, registry: str):
     # helpers — same library, lower-level entry point.
     pow_run(podman.docker_cmd + ["push", "--tls-verify=false", push_tag])
 
-    response = requests.get(f"http://{registry}/v2/{repo}/tags/list", timeout=10)
+    response = httpx2.get(f"http://{registry}/v2/{repo}/tags/list", timeout=10)
     assert response.status_code == 200
     payload = response.json()
     assert payload["name"] == repo
