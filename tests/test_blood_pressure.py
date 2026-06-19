@@ -208,6 +208,52 @@ def test_chart_hide_pulse(client: TestClient, record: dict):
     assert b"<svg" in response.content
 
 
+def test_chart_dark_theme(client: TestClient, record: dict):
+    response = client.get(f"{BASE_URL}/chart?theme=dark")
+    assert response.status_code == 200
+    assert b"<svg" in response.content
+
+
+def test_chart_invalid_theme(client: TestClient):
+    assert client.get(f"{BASE_URL}/chart?theme=neon").status_code == 422
+
+
+def test_chart_start_after_end(client: TestClient):
+    response = client.get(
+        f"{BASE_URL}/chart?start=2024-12-31T00:00:00&end=2024-01-01T00:00:00"
+    )
+    assert response.status_code == 422
+
+
+def test_chart_systolic_top_out_of_range(client: TestClient):
+    assert client.get(f"{BASE_URL}/chart?systolic_top=500").status_code == 422
+    assert client.get(f"{BASE_URL}/chart?systolic_top=-1").status_code == 422
+
+
+def test_chart_cache_headers(client: TestClient, record: dict):
+    response = client.get(f"{BASE_URL}/chart")
+    assert response.headers["cache-control"] == "private, max-age=3600"
+    assert response.headers["etag"]
+
+
+def test_chart_etag_not_modified(client: TestClient, record: dict):
+    first = client.get(f"{BASE_URL}/chart")
+    etag = first.headers["etag"]
+    second = client.get(f"{BASE_URL}/chart", headers={"If-None-Match": etag})
+    assert second.status_code == 304
+    assert second.headers["etag"] == etag
+    assert not second.content
+
+
+def test_chart_etag_changes_with_new_data(client: TestClient, record: dict):
+    etag = client.get(f"{BASE_URL}/chart").headers["etag"]
+    client.post(
+        BASE_URL + "/",
+        json={"systolic": 118, "diastolic": 78, "measured_at": "2024-02-01T10:00:00"},
+    )
+    assert client.get(f"{BASE_URL}/chart").headers["etag"] != etag
+
+
 def test_import(client: TestClient):
     payload = [
         {
