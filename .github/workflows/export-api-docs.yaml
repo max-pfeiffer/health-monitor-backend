@@ -1,0 +1,53 @@
+name: Export API Documentation
+
+on:
+  push:
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
+
+jobs:
+  export-api-docs:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Mint GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.RELEASE_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_BOT_PRIVATE_KEY }}
+          repositories: ${{ github.repository }}
+      - name: Checkout repository at release tag
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.release.outputs.version }}
+          token: ${{ steps.app-token.outputs.token }}
+          fetch-depth: 0
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.14"
+      - name: Create virtual environment
+        run: uv sync
+      - name: Generate API docs
+        run: uv run python scripts/export_openapi.py
+      - name: Open and auto-merge pull request with API docs
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          version="${GITHUB_REF_NAME}"
+          git add api_docs/
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          BRANCH="docs/api-docs-${version}"
+          git checkout -b "${BRANCH}"
+          git commit -m "docs: regenerate OpenAPI specs for ${version}"
+          git push --force-with-lease origin "${BRANCH}"
+          pr_url=$(gh pr create \
+            --base main \
+            --head "${BRANCH}" \
+            --title "docs: regenerate OpenAPI specs for ${version}" \
+            --body "Automatically generated OpenAPI specs for release \`${version}\`.")
+          gh pr merge "${pr_url}" --squash --delete-branch --auto || \
+            gh pr merge "${pr_url}" --squash --delete-branch
