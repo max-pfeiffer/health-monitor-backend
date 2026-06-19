@@ -42,7 +42,3 @@ addopts = "--cov=app --cov-report=xml --cov-report=term"
 
 [tool.commitizen]
 name = "cz_conventional_commits"
-version = "0.8.0"
-version_files = ["pyproject.toml:^version"]
-tag_format = "$version"
-update_changelog_on_bump = true
