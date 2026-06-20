@@ -19,7 +19,12 @@ from app.database import get_session
 from app.diagrams.blood_glucose import render_chart
 from app.repositories.blood_glucose import BloodGlucoseRepository
 from app.repositories.exceptions import DuplicateMeasurementError
-from app.routers.chart_response import chart_response, validate_time_range
+from app.routers.chart_response import (
+    CHART_RESPONSES,
+    SVGChartResponse,
+    chart_response,
+    validate_time_range,
+)
 from app.schemas.blood_glucose import (
     BloodGlucoseCreate,
     BloodGlucoseRead,
@@ -71,7 +76,7 @@ async def import_blood_glucose(
     return Response(status_code=201)
 
 
-@router.get("/chart")
+@router.get("/chart", response_class=SVGChartResponse, responses=CHART_RESPONSES)
 def blood_glucose_chart(
     request: Request,
     start: Optional[datetime] = None,

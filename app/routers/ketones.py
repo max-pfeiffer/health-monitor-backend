@@ -19,7 +19,12 @@ from app.database import get_session
 from app.diagrams.ketones import render_chart
 from app.repositories.exceptions import DuplicateMeasurementError
 from app.repositories.ketones import KetonesRepository
-from app.routers.chart_response import chart_response, validate_time_range
+from app.routers.chart_response import (
+    CHART_RESPONSES,
+    SVGChartResponse,
+    chart_response,
+    validate_time_range,
+)
 from app.schemas.ketones import KetonesCreate, KetonesRead, KetonesUpdate
 
 router = APIRouter(prefix="/ketones", tags=["ketones"])
@@ -67,7 +72,7 @@ async def import_ketones(
     return Response(status_code=201)
 
 
-@router.get("/chart")
+@router.get("/chart", response_class=SVGChartResponse, responses=CHART_RESPONSES)
 def ketones_chart(
     request: Request,
     start: Optional[datetime] = None,

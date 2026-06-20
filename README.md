@@ -78,7 +78,7 @@ tests/                   # pytest suite (testcontainers spins up PostgreSQL)
 Install dependencies. Pick one of the following depending on what you need:
 
 ```bash
-uv sync             # development: installs main + dev dependencies (pytest, ruff, pre-commit, testcontainers, …)
+uv sync             # development: installs main + dev dependencies (pytest, pre-commit, testcontainers, …)
 uv sync --no-dev    # production: installs only the main dependencies needed to run the app
 ```
 
@@ -125,10 +125,15 @@ Tests use [testcontainers](https://testcontainers.com/) to spin up a real Postgr
 
 ### Lint and format
 
+Ruff is **not** installed as a project dependency — it runs through the Ruff pre-commit hook (`astral-sh/ruff-pre-commit`), so `uv run ruff ...` will not work. Lint and format by invoking the hooks:
+
 ```bash
-uv run ruff check .
-uv run ruff format .
+uv run pre-commit run ruff-check --all-files     # lint
+uv run pre-commit run ruff-format --all-files    # format
+uv run pre-commit run --all-files                # everything (lint + format + commit checks)
 ```
+
+Ruff's configuration lives in `pyproject.toml` (`[tool.ruff]`); the hook reads it.
 
 ### Generate API docs
 

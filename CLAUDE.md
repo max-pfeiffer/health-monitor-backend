@@ -85,7 +85,8 @@ The application will run 24/7.
 - Diagram endpoints return SVG images via `StreamingResponse` 
 - Diagram endpoints should accept parameters for the time axis of the diagram. With parameters start and end time of the time axis can be specified.
 - For each health metric an endpoint is created to import bulk data in JSON format. The import fails when any data fails validation.
-- All api parameters or fields need to be provided in ISO 8601 format
+- All API parameters or fields need to be provided in ISO 8601 format
+- All API Endpoints must be documented completely in OpenAPI documentation which the FastAPI framework generates.
 
 ### CORS
 - FastAPI's `CORSMiddleware` is configured in `app/main.py` and handles preflight `OPTIONS` requests
@@ -150,7 +151,7 @@ uv run python scripts/get_token.py         # fetch a JWT for the tester user
 - SQL database interaction in Python: SQLModel
 - Database migrations: alembic
 - Test runner: pytest
-- Linter/formatter: Ruff
+- Linter/formatter: Ruff (run via the pre-commit hook, not installed as a dependency)
 - git pre-commit hooks: pre-commit
 - Conventional commits: commitizen
 - Container: Podman
@@ -195,7 +196,7 @@ Checklist when adding a new metric (e.g. `blood_oxygen`):
 - For git commit messages conventional commits specification is used: https://www.conventionalcommits.org/en/v1.0.0/#specification
 
 ### Setup
-Development setup needs both the main and the dev dependencies. Production setup needs only the main dependencies (no pytest, ruff, pre-commit, testcontainers, etc.).
+Development setup needs both the main and the dev dependencies. Production setup needs only the main dependencies (no pytest, pre-commit, testcontainers, etc.). Note: Ruff is not a project dependency at all — it is provided by the Ruff pre-commit hook, so it is never installed by `uv sync`.
 ```
 uv sync                       # development: main + dev dependencies
 uv sync --no-dev              # production: main dependencies only
@@ -220,10 +221,13 @@ uv run pytest tests/path/to/test.py::test_name    # run single test
 Tests spin up a PostgreSQL database using testcontainers library via conftest.py fixtures (`session`, `client`). Each test gets a fresh database — tables are created and dropped per test via the `setup_tables` autouse fixture.
 
 ### Linting
+Ruff is **not** installed as a project dependency — it is run exclusively through the Ruff pre-commit hook (`astral-sh/ruff-pre-commit` in `.pre-commit-config.yaml`). `uv run ruff ...` will fail. Lint and format by running the hooks:
 ```
-uv run ruff check .    # lint
-uv run ruff format .   # format
+uv run pre-commit run ruff-check --all-files     # lint
+uv run pre-commit run ruff-format --all-files    # format
+uv run pre-commit run --all-files                # run all hooks (lint, format, commit checks)
 ```
+Ruff's configuration still lives in `pyproject.toml` (`[tool.ruff]`); the hook reads it.
 
 ### Git pre-commit hooks
 Hooks are defined in `.pre-commit-config.yaml` and enforced in CI by the `Code quality` workflow.
