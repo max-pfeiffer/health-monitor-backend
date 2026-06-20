@@ -1,4 +1,4 @@
-name: Export API Documentation
+name: Publish Image
 
 on:
   push:
