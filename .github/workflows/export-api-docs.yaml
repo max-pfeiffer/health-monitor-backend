@@ -5,9 +5,14 @@ on:
     tags:
       - "[0-9]+.[0-9]+.[0-9]+"
 
+concurrency:
+  group: export-api-docs-${{ github.ref_name }}
+  cancel-in-progress: false
+
 jobs:
   export-api-docs:
     runs-on: ubuntu-24.04
+    permissions: {}
     steps:
       - name: Mint GitHub App token
         id: app-token
@@ -19,10 +24,9 @@ jobs:
       - name: Checkout repository at release tag
         uses: actions/checkout@v6
         with:
-          ref: ${{ needs.release.outputs.version }}
+          ref: ${{ github.ref_name }}
           token: ${{ steps.app-token.outputs.token }}
           fetch-depth: 0
-          persist-credentials: false
       - name: Setup uv
         uses: astral-sh/setup-uv@v7
         with:
@@ -49,13 +53,16 @@ jobs:
             exit 0
           fi
           BRANCH="docs/api-docs-${version}"
-          git checkout -b "${BRANCH}"
+          git checkout -B "${BRANCH}"
           git commit -m "docs: regenerate OpenAPI specs for ${version}"
-          git push --force-with-lease origin "${BRANCH}"
-          pr_url=$(gh pr create \
-            --base main \
-            --head "${BRANCH}" \
-            --title "docs: regenerate OpenAPI specs for ${version}" \
-            --body "Automatically generated OpenAPI specs for release \`${version}\`.")
+          git push --force origin "${BRANCH}"
+          pr_url=$(gh pr list --head "${BRANCH}" --base main --state open --json url --jq '.[0].url // empty')
+          if [ -z "${pr_url}" ]; then
+            pr_url=$(gh pr create \
+              --base main \
+              --head "${BRANCH}" \
+              --title "docs: regenerate OpenAPI specs for ${version}" \
+              --body "Automatically generated OpenAPI specs for release \`${version}\`.")
+          fi
           gh pr merge "${pr_url}" --squash --delete-branch --auto || \
             gh pr merge "${pr_url}" --squash --delete-branch
