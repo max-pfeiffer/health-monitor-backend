@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.9.1](https://github.com/max-pfeiffer/health-monitor-backend/compare/0.9.0...0.9.1) (2026-06-20)
+
+
+### Bug Fixes
+
+* Added additional tests for chart endpoints ([f587276](https://github.com/max-pfeiffer/health-monitor-backend/commit/f587276305a45246d8c71108429b7b97567a057b))
+* API docs for chart endpoints ([78856ea](https://github.com/max-pfeiffer/health-monitor-backend/commit/78856ea598d9e7d7856fd85deaab29cba20a9aef))
+* API docs for chart endpoints ([07c381b](https://github.com/max-pfeiffer/health-monitor-backend/commit/07c381baeab8768f9daf63c29b0581127b0fcd25))
+* Export API docs workflow ([4e945fb](https://github.com/max-pfeiffer/health-monitor-backend/commit/4e945fbf3e6992313c72adcb5cac17db3b8d9577))
+* Export API docs workflow ([306274e](https://github.com/max-pfeiffer/health-monitor-backend/commit/306274ecf6fc1521acac523c6a840db83007e438))
+
 ## [0.9.0](https://github.com/max-pfeiffer/health-monitor-backend/compare/0.8.0...0.9.0) (2026-06-19)
 
 

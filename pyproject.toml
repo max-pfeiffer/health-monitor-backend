@@ -1,6 +1,6 @@
 [project]
 name = "health-monitor-backend"
-version = "0.9.0"
+version = "0.9.1"
 description = "Health metrics monitoring backend"
 requires-python = ">=3.14"
 dependencies = [
