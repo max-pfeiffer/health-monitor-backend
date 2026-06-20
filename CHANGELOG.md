@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.9.2](https://github.com/max-pfeiffer/health-monitor-backend/compare/0.9.1...0.9.2) (2026-06-20)
+
+
+### Bug Fixes
+
+* Another fix for export API and publish image workflows ([5898837](https://github.com/max-pfeiffer/health-monitor-backend/commit/5898837a9f110bfa12395cc38870e40de7accb3c))
+* Another fix for export API and publish image workflows ([5c45e55](https://github.com/max-pfeiffer/health-monitor-backend/commit/5c45e557b5be6f024e61f2080cb179d1349d4614))
+
 ## [0.9.1](https://github.com/max-pfeiffer/health-monitor-backend/compare/0.9.0...0.9.1) (2026-06-20)
 
 
