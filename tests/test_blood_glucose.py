@@ -155,6 +155,19 @@ def test_chart_time_range_filters_records(client: TestClient):
     assert b"<svg" in response.content
 
 
+def test_chart_start_after_end(client: TestClient):
+    response = client.get(
+        f"{BASE_URL}/chart?start=2024-12-31T00:00:00&end=2024-01-01T00:00:00"
+    )
+    assert response.status_code == 422
+    # Conforms to FastAPI's structured 422 payload (a list of error objects),
+    # not a plain string detail.
+    detail = response.json()["detail"]
+    assert isinstance(detail, list)
+    assert detail[0]["type"] == "value_error"
+    assert detail[0]["loc"] == ["query", "end"]
+
+
 def test_import(client: TestClient):
     payload = [
         {"value": "5.60", "measured_at": "2024-01-10T08:00:00"},
