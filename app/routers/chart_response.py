@@ -5,17 +5,57 @@ from datetime import datetime
 from io import BytesIO
 from typing import Callable, Optional
 
-from fastapi import HTTPException, Request, Response
+from fastapi import Request, Response
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import StreamingResponse
 
 # Charts are per-user (behind auth), so cache them privately for an hour.
 CACHE_CONTROL = "private, max-age=3600"
 
 
+class SVGChartResponse(StreamingResponse):
+    """A ``StreamingResponse`` documented as an SVG image in OpenAPI."""
+
+    media_type = "image/svg+xml"
+
+
+# Shared OpenAPI ``responses`` for the SVG chart endpoints. FastAPI already
+# documents 422 automatically for the query parameters; this fills in the SVG
+# success body and the conditional 304 that ``chart_response`` can return.
+CHART_RESPONSES: dict = {
+    200: {
+        "description": "Rendered SVG chart for the requested time range.",
+        "content": {
+            "image/svg+xml": {"schema": {"type": "string", "format": "binary"}}
+        },
+    },
+    304: {
+        "description": (
+            "The chart is unchanged since the ETag supplied in the "
+            "`If-None-Match` request header. No body is returned."
+        ),
+    },
+}
+
+
 def validate_time_range(start: Optional[datetime], end: Optional[datetime]) -> None:
-    """Reject an inverted time range with a 422."""
+    """Reject an inverted time range with a 422.
+
+    Raised as a ``RequestValidationError`` so the response body matches the
+    structured ``{"detail": [{"type", "loc", "msg", "input"}]}`` payload that
+    FastAPI emits for its own query-parameter validation errors.
+    """
     if start is not None and end is not None and start > end:
-        raise HTTPException(status_code=422, detail="start must not be after end")
+        raise RequestValidationError(
+            [
+                {
+                    "type": "value_error",
+                    "loc": ("query", "end"),
+                    "msg": "Value error, end must not be before start",
+                    "input": end.isoformat(),
+                }
+            ]
+        )
 
 
 def _compute_etag(parts: list, records: list) -> str:
@@ -43,4 +83,4 @@ def chart_response(
     if request.headers.get("if-none-match") == etag:
         return Response(status_code=304, headers=headers)
 
-    return StreamingResponse(render(), media_type="image/svg+xml", headers=headers)
+    return SVGChartResponse(render(), headers=headers)

@@ -20,7 +20,12 @@ from app.database import get_session
 from app.diagrams.blood_pressure import render_chart
 from app.repositories.blood_pressure import BloodPressureRepository
 from app.repositories.exceptions import DuplicateMeasurementError
-from app.routers.chart_response import chart_response, validate_time_range
+from app.routers.chart_response import (
+    CHART_RESPONSES,
+    SVGChartResponse,
+    chart_response,
+    validate_time_range,
+)
 from app.schemas.blood_pressure import (
     BloodPressureCreate,
     BloodPressureRead,
@@ -72,7 +77,7 @@ async def import_blood_pressure(
     return Response(status_code=201)
 
 
-@router.get("/chart")
+@router.get("/chart", response_class=SVGChartResponse, responses=CHART_RESPONSES)
 def blood_pressure_chart(
     request: Request,
     start: Optional[datetime] = None,
