@@ -1,0 +1,40 @@
+name: Update Docker Hub Description
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "README.md"
+      - ".github/workflows/dockerhub-description.yaml"
+  workflow_dispatch:
+
+concurrency:
+  group: dockerhub-description
+  cancel-in-progress: true
+
+jobs:
+  dockerhub-description:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    env:
+      DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
+      DOCKER_HUB_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
+    steps:
+      - name: Verify Docker Hub credentials are configured
+        run: |
+          if [ -z "$DOCKER_HUB_USERNAME" ] || [ -z "$DOCKER_HUB_TOKEN" ]; then
+            echo "::error::DOCKER_HUB_USERNAME and/or DOCKER_HUB_TOKEN repository secrets are not set."
+            echo "::error::Add them under Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      - name: Push README.md to Docker Hub as repository overview
+        uses: peter-evans/dockerhub-description@v5
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+          repository: ${{ secrets.DOCKER_HUB_USERNAME }}/health-monitor-backend
+          readme-filepath: ./README.md
