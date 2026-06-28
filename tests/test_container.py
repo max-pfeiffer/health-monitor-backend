@@ -1,5 +1,6 @@
 import base64
 import json
+import platform
 import socket
 import time
 from pathlib import Path
@@ -23,7 +24,17 @@ from scripts.build import build_image
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 IMAGE_TAG = "health-monitor-backend:test"
+MULTI_ARCH_TAG = "health-monitor-backend:multiarch-test"
+TARGET_PLATFORMS = ("linux/amd64", "linux/arm64")
 POSTGRES_ALIAS = "db"
+
+
+def _host_platform() -> str:
+    """The build platform of the host, so functional tests build a runnable
+    image natively instead of emulating a foreign architecture."""
+    machine = platform.machine().lower()
+    arch = "arm64" if machine in {"arm64", "aarch64"} else "amd64"
+    return f"linux/{arch}"
 
 
 def _free_port() -> int:
@@ -78,6 +89,7 @@ def built_image() -> str:
         tag=IMAGE_TAG,
         containerfile=PROJECT_ROOT / "Containerfile",
         context=PROJECT_ROOT,
+        platforms=(_host_platform(),),
     )
 
 
@@ -231,3 +243,29 @@ def test_push_image_to_registry(built_image: str, registry: str):
     payload = response.json()
     assert payload["name"] == repo
     assert "push-test" in payload["tags"]
+
+
+@pytest.fixture(scope="module")
+def multi_arch_manifest() -> str:
+    podman = DockerClient(client_call=["podman"])
+    build_image(
+        tag=MULTI_ARCH_TAG,
+        containerfile=PROJECT_ROOT / "Containerfile",
+        context=PROJECT_ROOT,
+        platforms=TARGET_PLATFORMS,
+    )
+    try:
+        yield MULTI_ARCH_TAG
+    finally:
+        pow_run(podman.docker_cmd + ["manifest", "rm", MULTI_ARCH_TAG])
+
+
+def test_build_produces_multi_arch_manifest(multi_arch_manifest: str):
+    podman = DockerClient(client_call=["podman"])
+    raw = pow_run(podman.docker_cmd + ["manifest", "inspect", multi_arch_manifest])
+    manifest = json.loads(raw)
+
+    architectures = {
+        entry["platform"]["architecture"] for entry in manifest["manifests"]
+    }
+    assert {"amd64", "arm64"} <= architectures
