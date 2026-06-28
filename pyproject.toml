@@ -36,7 +36,10 @@ select = ["E", "F", "I"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
-addopts = "--cov=app --cov-report=xml --cov-report=term"
+addopts = "--cov=app --cov-report=xml --cov-report=term -m 'not slow'"
+markers = [
+    "slow: slow-running tests (e.g. building/running the container image); excluded by default, run with -m slow",
+]
 
 [tool.commitizen]
 name = "cz_conventional_commits"

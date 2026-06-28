@@ -22,6 +22,11 @@ from testcontainers.registry import DockerRegistryContainer
 
 from scripts.build import build_image
 
+# These tests build and run the container image with Podman, which is slow.
+# They are excluded from the default test run and only executed when the
+# Containerfile or build script changes (see .github/workflows/container-tests.yaml).
+pytestmark = pytest.mark.slow
+
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 IMAGE_TAG = "health-monitor-backend:test"
 MULTI_ARCH_TAG = "health-monitor-backend:multiarch-test"
