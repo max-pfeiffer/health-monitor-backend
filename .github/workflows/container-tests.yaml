@@ -1,0 +1,36 @@
+name: Container Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "Containerfile"
+      - "scripts/build.py"
+      - "tests/test_container.py"
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    env:
+      TESTCONTAINERS_RYUK_DISABLED: "true"
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+      - name: Set up QEMU for cross-architecture builds
+        uses: docker/setup-qemu-action@v4
+        with:
+          platforms: amd64,arm64
+      - name: Start Podman socket
+        run: |
+          sudo loginctl enable-linger "$USER"
+          systemctl --user enable --now podman.socket
+          echo "DOCKER_HOST=unix:///run/user/$(id -u)/podman/podman.sock" >> "$GITHUB_ENV"
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.14"
+      - name: Create Virtual environment
+        run: uv sync
+      - name: Run container tests
+        run: uv run pytest -m slow

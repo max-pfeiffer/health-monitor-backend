@@ -112,6 +112,7 @@ The application will run 24/7.
 - Building and running the container is tested with Python libraries
 - Use multiple stages in the containerfile to optimize image size
 - The image is published on DockerHub: https://hub.docker.com/
+- Image architectures: linux/amd64, linux/arm64
 
 ```
 uv run python scripts/build.py --help    # see available commands
@@ -127,6 +128,11 @@ Coverage:
 - database operations
 - generating diagrams
 - repositories
+
+#### Slow tests
+- Slow tests build and run the container image with Podman (`tests/test_container.py`). They are marked with `@pytest.mark.slow` (module-level `pytestmark`).
+- The default test run excludes them via `addopts = "... -m 'not slow'"` in `pyproject.toml`; run them explicitly with `uv run pytest -m slow`.
+- In CI they run in a dedicated workflow (`.github/workflows/container-tests.yaml`) in parallel with the unit-test workflow, but only on PRs that change `Containerfile`, `scripts/build.py`, or `tests/test_container.py`.
 
 #### Local manual testing
 - Podman compose is used for local manual testing
@@ -214,8 +220,10 @@ When adding a new SQLModel table model, import it in `alembic/env.py` so Alembic
 
 ### Testing
 ```
-uv run pytest                                      # run all tests
+uv run pytest                                      # run unit tests (slow tests excluded by default)
 uv run pytest tests/path/to/test.py::test_name    # run single test
+uv run pytest -m slow                              # run only the slow container tests
+uv run pytest -m ""                                # run everything, including slow tests
 ```
 
 Tests spin up a PostgreSQL database using testcontainers library via conftest.py fixtures (`session`, `client`). Each test gets a fresh database — tables are created and dropped per test via the `setup_tables` autouse fixture.
