@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.10.0](https://github.com/max-pfeiffer/health-monitor-backend/compare/0.9.2...0.10.0) (2026-07-16)
+
+
+### Features
+
+* Container image support arm64 architecture ([1c578cf](https://github.com/max-pfeiffer/health-monitor-backend/commit/1c578cf59fbef8284e5c65420d157fd5ef2a2de9))
+* improved application and setup for Kubernetes readiness ([f79fa66](https://github.com/max-pfeiffer/health-monitor-backend/commit/f79fa66c9a729c51bf3fec90940595762d29a8a4))
+
+
+### Documentation
+
+* Added workflow badges to readme ([c6c1fd1](https://github.com/max-pfeiffer/health-monitor-backend/commit/c6c1fd10b4d82a46335b684fd87f878abd7a08bb))
+* fixed env example ([9ec7879](https://github.com/max-pfeiffer/health-monitor-backend/commit/9ec787973008143114abb0a8d5b68390a319d5a2))
+* regenerate OpenAPI specs for 0.9.2 ([#39](https://github.com/max-pfeiffer/health-monitor-backend/issues/39)) ([07f9fe6](https://github.com/max-pfeiffer/health-monitor-backend/commit/07f9fe6856d0c5fab463035ae58f25e089cea6cc))
+
 ## [0.9.2](https://github.com/max-pfeiffer/health-monitor-backend/compare/0.9.1...0.9.2) (2026-06-20)
 
 
