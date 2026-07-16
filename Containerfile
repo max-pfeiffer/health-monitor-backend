@@ -23,15 +23,20 @@ FROM python:3.14-slim AS runtime
 ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONPATH=/app
+    PYTHONPATH=/app \
+    MPLCONFIGDIR=/tmp/matplotlib
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends libpq5 \
     && rm -rf /var/lib/apt/lists/*
 
+RUN useradd --uid 1000 --no-create-home --shell /usr/sbin/nologin appuser
+
 WORKDIR /app
 
 COPY --from=builder /app /app
+
+USER 1000
 
 EXPOSE 8000
 
