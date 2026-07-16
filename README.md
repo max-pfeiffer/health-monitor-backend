@@ -1,9 +1,11 @@
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![codecov](https://codecov.io/gh/max-pfeiffer/health-monitor-backend/graph/badge.svg?token=0FVFqJBroP)](https://codecov.io/gh/max-pfeiffer/health-monitor-backend)
-[![Unit Tests](https://github.com/max-pfeiffer/health-monitor-backend/actions/workflows/tests.yml/badge.svg)](https://github.com/max-pfeiffer/health-monitor-backend/actions/workflows/tests.yml)
-[![Code quality](https://github.com/max-pfeiffer/health-monitor-backend/actions/workflows/code-quality.yml/badge.svg)](https://github.com/max-pfeiffer/health-monitor-backend/actions/workflows/code-quality.yml)
-[![Release](https://github.com/max-pfeiffer/health-monitor-backend/actions/workflows/release.yml/badge.svg)](https://github.com/max-pfeiffer/health-monitor-backend/actions/workflows/release.yml)
+[![Code quality](https://github.com/max-pfeiffer/health-monitor-backend/actions/workflows/code-quality.yaml/badge.svg)](https://github.com/max-pfeiffer/health-monitor-backend/actions/workflows/code-quality.yaml)
+[![Unit Tests](https://github.com/max-pfeiffer/health-monitor-backend/actions/workflows/tests.yaml/badge.svg)](https://github.com/max-pfeiffer/health-monitor-backend/actions/workflows/tests.yaml)
+[![Container Tests](https://github.com/max-pfeiffer/health-monitor-backend/actions/workflows/container-tests.yaml/badge.svg)](https://github.com/max-pfeiffer/health-monitor-backend/actions/workflows/container-tests.yaml)
+[![Release](https://github.com/max-pfeiffer/health-monitor-backend/actions/workflows/release.yaml/badge.svg)](https://github.com/max-pfeiffer/health-monitor-backend/actions/workflows/release.yaml)
+[![Publish Image](https://github.com/max-pfeiffer/health-monitor-backend/actions/workflows/publish-image.yaml/badge.svg)](https://github.com/max-pfeiffer/health-monitor-backend/actions/workflows/publish-image.yaml)
 
 # Health Monitor Backend
 
