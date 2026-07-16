@@ -2,7 +2,9 @@ import tomllib
 from pathlib import Path
 
 from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
 
+import app.main as app_main
 from app.config import settings
 from app.main import app
 
@@ -11,6 +13,30 @@ def test_root_redirects_to_docs(client: TestClient):
     response = client.get("/", follow_redirects=False)
     assert response.status_code == 307
     assert response.headers["location"] == "/docs"
+
+
+def test_healthz_requires_no_auth(client_no_auth: TestClient):
+    response = client_no_auth.get("/healthz")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+
+
+def test_readyz_with_reachable_database(
+    client_no_auth: TestClient, engine, monkeypatch
+):
+    monkeypatch.setattr(app_main, "engine", engine)
+    response = client_no_auth.get("/readyz")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+
+
+def test_readyz_with_unreachable_database(client_no_auth: TestClient, monkeypatch):
+    unreachable_engine = create_engine(
+        "postgresql+psycopg2://postgres:postgres@localhost:1/health_monitor"
+    )
+    monkeypatch.setattr(app_main, "engine", unreachable_engine)
+    response = client_no_auth.get("/readyz")
+    assert response.status_code == 503
 
 
 def test_app_version_matches_pyproject():
